@@ -1,0 +1,57 @@
+postgresql	online_store_db	public	addresses	addr_id	1	integer	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	offices	office_id	1	integer	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	offices	addr_id	3	integer	\N	FOREIGN KEY	public	addresses	addr_id
+postgresql	online_store_db	public	employees	emp_id	1	integer	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	employees	emp_email	4	text	\N	UNIQUE	\N	\N	\N
+postgresql	online_store_db	public	employees	office_id	5	integer	\N	FOREIGN KEY	public	offices	office_id
+postgresql	online_store_db	public	customers	cust_id	1	integer	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	customers	cust_email	4	text	\N	UNIQUE	\N	\N	\N
+postgresql	online_store_db	public	customers	addr_id	6	integer	\N	FOREIGN KEY	public	addresses	addr_id
+postgresql	online_store_db	public	customers	sales_rep_emp_id	7	integer	\N	FOREIGN KEY	public	employees	emp_id
+postgresql	online_store_db	public	orders	ord_id	1	integer	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	orders	cust_id	2	integer	\N	FOREIGN KEY	public	customers	cust_id
+postgresql	online_store_db	public	productlines	prod_line_name	1	text	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	vendors	vendor_id	1	integer	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	vendors	vendor_name	2	text	\N	UNIQUE	\N	\N	\N
+postgresql	online_store_db	public	vendors	vendor_email	3	text	\N	UNIQUE	\N	\N	\N
+postgresql	online_store_db	public	vendors	addr_id	5	integer	\N	FOREIGN KEY	public	addresses	addr_id
+postgresql	online_store_db	public	products	prod_id	1	integer	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	products	prod_line_name	3	text	\N	FOREIGN KEY	public	productlines	prod_line_name
+postgresql	online_store_db	public	products	prod_vendor_id	4	integer	\N	FOREIGN KEY	public	vendors	vendor_id
+postgresql	online_store_db	public	orderdetails	ord_id	1	integer	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	orderdetails	prod_id	2	integer	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	orderdetails	ord_id	1	integer	\N	FOREIGN KEY	public	orders	ord_id
+postgresql	online_store_db	public	orderdetails	prod_id	2	integer	\N	FOREIGN KEY	public	products	prod_id
+postgresql	online_store_db	public	payments	payment_id	1	integer	\N	PRIMARY KEY	\N	\N	\N
+postgresql	online_store_db	public	payments	cust_id	2	integer	\N	FOREIGN KEY	public	customers	cust_id
+postgresql	online_store_db	public	payments	ord_id	6	integer	\N	FOREIGN KEY	public	orders	ord_id
+postgresql	online_store_db	public	customers	cust_fname	2	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	orders	comments	5	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	payments	payment_status	5	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	addresses	postal_code	6	character varying	10	\N	\N	\N	\N
+postgresql	online_store_db	public	customers	cred_limit	8	numeric	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	addresses	city	4	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	addresses	state	5	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	vendors	vendor_phone_num	4	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	payments	amount	4	numeric	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	employees	job_title	6	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	customers	phone_num	5	character varying	25	\N	\N	\N	\N
+postgresql	online_store_db	public	orderdetails	quan_ordered	3	integer	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	addresses	country	7	character	3	\N	\N	\N	\N
+postgresql	online_store_db	public	offices	phone_num	2	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	customers	cust_lname	3	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	orders	req_shipped_date	4	date	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	productlines	prod_line_desc	2	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	addresses	addr_line2	3	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	products	msrp	8	numeric	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	products	prod_desc	5	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	payments	payment_date	3	timestamp without time zone	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	employees	emp_fname	2	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	employees	emp_lname	3	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	addresses	addr_line1	2	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	products	quan_in_stock	6	integer	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	orders	ord_date	3	timestamp without time zone	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	products	prod_name	2	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	products	buy_price	7	numeric	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	orderdetails	status	4	text	\N	\N	\N	\N	\N
+postgresql	online_store_db	public	orderdetails	price_each	5	numeric	\N	\N	\N	\N	\N
