@@ -2,17 +2,21 @@ package server
 
 import (
 	"database/sql"
-	// "fmt"
+	"fmt"
 	"log"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
+var db *sql.DB
+
 func ConnDB() {
-	if err := godotenv.Load(".env"); err != nil {
+	err := godotenv.Load(".env")
+	if err != nil {
 		panic(err)
 	}
 
@@ -20,15 +24,18 @@ func ConnDB() {
 	conn, _ := url.Parse(serviceURI)
 	conn.RawQuery = "sslmode=verify-ca;sslrootcert=ca.pem"
 
-	db, err := sql.Open("postgres", conn.String())
+	db, err = sql.Open("postgres", conn.String())
 
 	if err != nil {
 		log.Fatal(err)
 	}
+	// TODO: ADD A WAY TO CLOSE CONNECTION AFTER QUERY
 	// defer db.Close()
+}
 
+func CreateSchema() {
 	// addresses
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS addresses(
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS addresses(
 		addr_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 		addr_line1 TEXT NOT NULL,
 		addr_line2 TEXT,
@@ -41,71 +48,6 @@ func ConnDB() {
 		panic(err)
 	}
 
-
-	// WARNING: TEST DATA FOR TEST QUERY SELECT
-	// _, err = db.Exec(`INSERT INTO addresses(
-	// 		addr_line1,
-	// 		city,
-	// 		state,
-	// 		postal_code,
-	// 		country
-	// 	)
-	// 	VALUES (
-	// 		'1234 A Avenue St.',
-	// 		'Angeles',
-	// 		'Pampanga',
-	// 		'2010',
-	// 		'PHL'
-	// 	)`)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// WARNING: TEST GET THE DATA FROM INSERTED QUERY
-	// rows, err := db.Query(`SELECT
-	// 	addr_id,
-	// 	addr_line1,
-	// 	city,
-	// 	state,
-	// 	postal_code,
-	// 	country
-	// 	FROM addresses`)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// // defer rows.Close()
-	//
-	// for rows.Next() {
-	// 	var (
-	// 		addr_id     int
-	// 		addr_line1  string
-	// 		city        string
-	// 		state       string
-	// 		postal_code string
-	// 		country     string
-	// 	)
-	// 	if err := rows.Scan(
-	// 		&addr_id, 
-	// 		&addr_line1, 
-	// 		&city,
-	// 		&state,
-	// 		&postal_code,
-	// 		&country); err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	fmt.Printf("Address ID: %v \n", addr_id)
-	// 	fmt.Printf("Address Line1: %v \n", addr_line1)
-	// 	fmt.Printf("City: %v \n", city)
-	// 	fmt.Printf("State: %v \n", state)
-	// 	fmt.Printf("Postal Code: %v \n", postal_code)
-	// 	fmt.Printf("Country: %v \n", country)
-	// }
-	// if err = rows.Err(); err != nil {
-	// 	log.Fatal(err)
-	// }
-	// WARNING: TO DELETE UPWARDS TILL WARNING
-
-
 	// offices -> addresses
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS offices (
 		office_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -115,7 +57,6 @@ func ConnDB() {
 	if err != nil {
 		panic(err)
 	}
-
 
 	// employees -> offices
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS employees (
@@ -129,7 +70,6 @@ func ConnDB() {
 	if err != nil {
 		panic(err)
 	}
-
 
 	// customers -> addresses, employees
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS customers (
@@ -146,7 +86,6 @@ func ConnDB() {
 		panic(err)
 	}
 
-
 	// vendors -> addresses
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS vendors (
 		vendor_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -158,7 +97,6 @@ func ConnDB() {
 	if err != nil {
 		panic(err)
 	}
-
 
 	// orders -> customers
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS orders (
@@ -173,7 +111,6 @@ func ConnDB() {
 		panic(err)
 	}
 
-
 	// payments -> customers, orders
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS payments (
 		payment_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -187,7 +124,6 @@ func ConnDB() {
 		panic(err)
 	}
 
-
 	// product_lines
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS product_lines (
 		prod_line_name TEXT PRIMARY KEY,
@@ -196,7 +132,6 @@ func ConnDB() {
 	if err != nil {
 		panic(err)
 	}
-
 
 	// products -> product_lines
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS products (
@@ -213,7 +148,6 @@ func ConnDB() {
 		panic(err)
 	}
 
-
 	// order_details -> orders, products
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS order_details (
 		ord_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -225,5 +159,99 @@ func ConnDB() {
 	if err != nil {
 		panic(err)
 	}
+}
 
+func TestQuery() {
+	// WARNING: TEST DATA FOR TEST QUERY SELECT
+	_, err := db.Exec(`INSERT INTO addresses(
+			addr_line1,
+			city,
+			state,
+			postal_code,
+			country
+		)
+		VALUES (
+			'1234 A Avenue St.',
+			'Angeles',
+			'Pampanga',
+			'2010',
+			'PHL'
+		)`)
+	if err != nil {
+		panic(err)
+	}
+
+	// WARNING: TEST GET THE DATA FROM INSERTED QUERY
+	rows, err := db.Query(`SELECT
+		addr_id,
+		addr_line1,
+		city,
+		state,
+		postal_code,
+		country
+		FROM addresses`)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			addr_id     int
+			addr_line1  string
+			city        string
+			state       string
+			postal_code string
+			country     string
+		)
+		if err := rows.Scan(
+			&addr_id,
+			&addr_line1,
+			&city,
+			&state,
+			&postal_code,
+			&country); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Address ID: %v \n", addr_id)
+		fmt.Printf("Address Line1: %v \n", addr_line1)
+		fmt.Printf("City: %v \n", city)
+		fmt.Printf("State: %v \n", state)
+		fmt.Printf("Postal Code: %v \n", postal_code)
+		fmt.Printf("Country: %v \n", country)
+	}
+	if err = rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func AddAddr(addr *AddrRequest) (int64, error) {
+	res, err := db.Exec(`INSERT INTO addresses(
+			addr_line1,
+			addr_line2,
+			city,
+			state,
+			postal_code,
+			country
+		)
+		VALUES (
+			$1,
+			$2,
+			$3,
+			$4,
+			$5,
+			$6
+		)`,
+		addr.Addr_line1,
+		addr.Addr_line2,
+		addr.City,
+		addr.State,
+		addr.Postal_code,
+		strings.ToUpper(addr.Country),
+	)
+	if err != nil {
+		return 0, err
+	}
+	rows, err := res.RowsAffected()
+	return rows, nil
 }
