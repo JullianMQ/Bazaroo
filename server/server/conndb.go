@@ -277,7 +277,7 @@ func AddOffice(office *OfficeRequest) (int64, error) {
 // TODO: GET ALL EMPLOYEES
 // func GetEmp()
 
-func GetEmpByID(id int64) (Employee, error) {
+func GetEmpById(id int64) (Employee, error) {
 	var emp Employee
 	err := db.QueryRow(`SELECT
 		emp_id,
@@ -322,4 +322,33 @@ func AddEmp(emp *EmployeeRequest) (int64, error) {
 	}
 	id, err := result.RowsAffected()
 	return id, err
+}
+
+func AddVendor(vendor Vendor) (int64, error) {
+	result, err := db.Exec(`INSERT INTO vendors (vendor_name, vendor_email, vendor_phone_num, addr_id) VALUES ($1, $2, $3, $4)`,
+		vendor.Vendor_name,
+		vendor.Vendor_email,
+		vendor.Vendor_phone_num,
+		vendor.Addr_id)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func GetVendorById(id int64) (Vendor, error) {
+	var vendor Vendor
+	err := db.QueryRow(`SELECT
+		vendor_id,
+		vendor_name,
+		vendor_email,
+		vendor_phone_num,
+		addr_id
+		FROM vendors WHERE vendor_id = $1`,
+		id).Scan(&vendor.Vendor_id, &vendor.Vendor_name, &vendor.Vendor_email, &vendor.Vendor_phone_num, &vendor.Addr_id)
+	if err != nil {
+		return vendor, err
+	}
+	return vendor, nil
 }

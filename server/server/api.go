@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/mail"
 	"strconv"
+	"regexp"
 )
 
 type ErrorResponse struct {
@@ -60,6 +61,11 @@ func isEmailInDb(e string) bool {
 	return false
 }
 
+func isPhoneValid(p string) bool {
+	re := regexp.MustCompile(`^09[0-9]{9}$`)
+	return re.MatchString(p)
+}
+
 type AddrRequest struct {
 	Addr_line1  string `json:"addr_line1"`
 	Addr_line2  string `json:"addr_line2"`
@@ -80,6 +86,7 @@ type AddrResponse struct {
 }
 
 func GetAddr(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
 	rows, err := db.Query(`SELECT
 		addr_id,
 		addr_line1,
@@ -125,7 +132,6 @@ func GetAddr(res http.ResponseWriter, req *http.Request) {
 			Country:     country,
 		})
 	}
-	res.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(res).Encode(addr)
 }
 
@@ -355,7 +361,7 @@ func GetEmpId(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	emp, err := GetEmpByID(emp_id_int)
+	emp, err := GetEmpById(emp_id_int)
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			fmt.Sprintf("Could not get employee by id, check if id is correct."))
@@ -442,4 +448,120 @@ func PostEmp(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(OkResponse{
 		Message: fmt.Sprintf("Employee added successfully. %d rows affected", rows),
 	})
+}
+
+type Vendor struct {
+	Vendor_id int `json:"vendor_id"`
+	Vendor_name string `json:"vendor_name"`
+	Vendor_email string `json:"vendor_email"`
+	Vendor_phone_num string `json:"vendor_phone_num"`
+	Addr_id int `json:"addr_id"`
+}
+
+func GetVendors(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	rows, err := db.Query(`SELECT
+		vendor_id,
+		vendor_name,
+		vendor_email,
+		vendor_phone_num,
+		addr_id
+		FROM vendors`)
+	if err != nil {
+		log.Println(fmt.Sprintf("CHECK IF VENDOR ID IN DATABASE: %s", err))
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	var vendors []Vendor
+
+	for rows.Next() {
+		var vendor_id int
+		var vendor_name string
+		var vendor_email string
+		var vendor_phone_num string
+		var addr_id int
+		err := rows.Scan(&vendor_id, &vendor_name, &vendor_email, &vendor_phone_num, &addr_id)
+		if err != nil {
+			log.Println(fmt.Sprintf("CHECK IF VENDOR ID IN DATABASE: %s", err))
+			log.Println(err)
+			return
+		}
+		vendor := Vendor {
+			Vendor_id: vendor_id,
+			Vendor_name: vendor_name,
+			Vendor_email: vendor_email,
+			Vendor_phone_num: vendor_phone_num,
+			Addr_id: addr_id,
+		}
+		vendors = append(vendors, vendor)
+	}
+	json.NewEncoder(res).Encode(vendors)
+}
+
+func GetVendorId(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	vendor_id := req.URL.Query().Get("id")
+	vendor_id_int, err := strconv.ParseInt(vendor_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			"Invalid vendor id")
+		return
+	}
+
+	vendor, err := GetVendorById(vendor_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Error getting vendor")
+		log.Println(err)
+		return
+	}
+
+	json.NewEncoder(res).Encode(vendor)
+}
+
+type VendorRequest struct {
+	Vendor_name string `json:"vendor_name"`
+	Vendor_email string `json:"vendor_email"`
+	Vendor_phone_num string `json:"vendor_phone_num"`
+	Addr_id int `json:"addr_id"`
+}
+
+func PostVendor(res http.ResponseWriter, req *http.Request) {
+	var vendor *VendorRequest
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&vendor)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Error decoding request body")
+		log.Println(err)
+		return
+	}
+
+	if vendor.Vendor_name == "" {
+		ErrorRes(res, http.StatusBadRequest,
+			"Vendor name is required")
+		return
+	}
+
+	if vendor.Vendor_email == "" {
+		ErrorRes(res, http.StatusBadRequest,
+			"Vendor email is required")
+		return
+	}
+
+	if vendor.Vendor_phone_num == "" {
+		ErrorRes(res, http.StatusBadRequest,
+			"Vendor phone number is required")
+		return
+	}
+
+	if isPhoneValid(vendor.Vendor_phone_num) {
+		ErrorRes(res, http.StatusBadRequest,
+			"Vendor phone number is invalid")
+		return
+	}
+
+	json.NewEncoder(res).Encode(vendor)
 }
