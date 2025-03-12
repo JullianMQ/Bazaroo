@@ -22,11 +22,13 @@ func ServeHttp() {
 	handler := cors.New(corsOpts).Handler(mux)
 	fmt.Printf("Listening at port %s\n", PORT)
 	mux.HandleFunc("GET /", GetRoot)
-	mux.HandleFunc("GET /v1/emps", GetEmps)
-	mux.HandleFunc("GET /v1/emps/", GetEmpId)
 
 	mux.HandleFunc("GET /v1/addr", GetAddr)
 	mux.HandleFunc("POST /v1/addr", PostAddr)
+
+	mux.HandleFunc("GET /v1/offices", GetOffices)
+	mux.HandleFunc("POST /v1/offices", PostOffice)
+
 
 	if err := http.ListenAndServe(PORT, handler); err != nil {
 		log.Fatal(err)

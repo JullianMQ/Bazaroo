@@ -153,7 +153,6 @@ func CreateSchema() {
 		ord_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 		prod_id INT NOT NULL REFERENCES products(prod_id),
 		quan_ordered INT NOT NULL,
-		status TEXT NOT NULL,
 		price_each NUMERIC(10,2) NOT NULL
 	)`)
 	if err != nil {
@@ -248,6 +247,25 @@ func AddAddr(addr *AddrRequest) (int64, error) {
 		addr.State,
 		addr.Postal_code,
 		strings.ToUpper(addr.Country),
+	)
+	if err != nil {
+		return 0, err
+	}
+	rows, err := res.RowsAffected()
+	return rows, nil
+}
+
+func AddOffice (office *OfficeRequest) (int64, error) {
+	res, err := db.Exec(`INSERT INTO offices(
+			phone_num,
+			addr_id
+		)
+		VALUES (
+			$1,
+			$2
+		)`,
+		office.Phone_num,
+		office.Addr_id,
 	)
 	if err != nil {
 		return 0, err
