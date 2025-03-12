@@ -29,6 +29,9 @@ func ServeHttp() {
 	mux.HandleFunc("GET /v1/offices", GetOffices)
 	mux.HandleFunc("POST /v1/offices", PostOffice)
 
+	mux.HandleFunc("GET /v1/emps", GetEmps)
+	mux.HandleFunc("GET /v1/emps/", GetEmpId)
+	mux.HandleFunc("POST /v1/emps", PostEmp)
 
 	if err := http.ListenAndServe(PORT, handler); err != nil {
 		log.Fatal(err)

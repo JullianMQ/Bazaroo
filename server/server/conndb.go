@@ -255,7 +255,7 @@ func AddAddr(addr *AddrRequest) (int64, error) {
 	return rows, nil
 }
 
-func AddOffice (office *OfficeRequest) (int64, error) {
+func AddOffice(office *OfficeRequest) (int64, error) {
 	res, err := db.Exec(`INSERT INTO offices(
 			phone_num,
 			addr_id
@@ -272,4 +272,54 @@ func AddOffice (office *OfficeRequest) (int64, error) {
 	}
 	rows, err := res.RowsAffected()
 	return rows, nil
+}
+
+// TODO: GET ALL EMPLOYEES
+// func GetEmp()
+
+func GetEmpByID(id int64) (Employee, error) {
+	var emp Employee
+	err := db.QueryRow(`SELECT
+		emp_id,
+		emp_fname,
+		emp_lname,
+		emp_email,
+		office_id,
+		job_title
+		FROM employees
+		WHERE emp_id = $1`, id).Scan(
+		&emp.Emp_id,
+		&emp.Emp_fname,
+		&emp.Emp_lname,
+		&emp.Emp_email,
+		&emp.Office_id,
+		&emp.Job_title,
+	)
+	return emp, err
+}
+
+func AddEmp(emp *EmployeeRequest) (int64, error) {
+	result, err := db.Exec(`INSERT INTO employees (
+		emp_fname,
+		emp_lname,
+		emp_email,
+		office_id,
+		job_title
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5
+	)`,
+		emp.Emp_fname,
+		emp.Emp_lname,
+		emp.Emp_email,
+		emp.Office_id,
+		emp.Job_title)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
 }

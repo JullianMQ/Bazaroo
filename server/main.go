@@ -11,5 +11,6 @@ var wg = sync.WaitGroup{}
 
 func main() {
 	server.ConnDB()
+	server.CreateSchema()
 	server.ServeHttp()
 }
