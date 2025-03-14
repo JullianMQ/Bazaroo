@@ -155,39 +155,20 @@ func PostAddr(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if addr.Addr_line1 == "" {
+	if ContainsEmpty([]string{
+		addr.Addr_line1,
+		addr.City,
+		addr.State,
+		addr.Postal_code,
+		addr.Country}) {
 		ErrorRes(res, http.StatusBadRequest,
-			"addr_line1 is required")
-		return
-	}
-
-	if addr.City == "" {
-		ErrorRes(res, http.StatusBadRequest,
-			"city is required")
-		return
-	}
-
-	if addr.State == "" {
-		ErrorRes(res, http.StatusBadRequest,
-			"state is required")
-		return
-	}
-
-	if addr.Postal_code == "" {
-		ErrorRes(res, http.StatusBadRequest,
-			"postal_code is required")
+			"addr_line1, city, state, postal_code, country cannot be empty")
 		return
 	}
 
 	if len(addr.Postal_code) > 10 {
 		ErrorRes(res, http.StatusBadRequest,
 			"postal_code must be 10 characters or less")
-		return
-	}
-
-	if addr.Country == "" {
-		ErrorRes(res, http.StatusBadRequest,
-			"country is required")
 		return
 	}
 
@@ -269,21 +250,23 @@ func PostOffice(res http.ResponseWriter, req *http.Request) {
 		log.Println(err)
 	}
 
-	if office.Phone_num == "" {
+	if ContainsEmpty([]string{
+		office.Phone_num}) {
 		ErrorRes(res, http.StatusBadRequest,
-			"phone_num is required")
+			"phone_num cannot be empty")
+		return
+	}
+
+	if ContainsZero([]int{
+		office.Addr_id}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"addr_id is required")
 		return
 	}
 
 	if len(office.Phone_num) != 11 {
 		ErrorRes(res, http.StatusBadRequest,
 			"phone_num must be 11 characters")
-		return
-	}
-
-	if office.Addr_id == 0 {
-		ErrorRes(res, http.StatusBadRequest,
-			"addr_id is required")
 		return
 	}
 
@@ -402,22 +385,20 @@ func PostEmp(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if emp.Emp_fname == "" {
+	if ContainsEmpty([]string{
+		emp.Emp_fname,
+		emp.Emp_lname,
+		emp.Emp_email,
+		emp.Job_title}) {
 		ErrorRes(res, http.StatusBadRequest,
-			"emp_fname is required")
+			"emp_fname, emp_lname, emp_email, job_title cannot be empty")
 		return
 	}
 
-	if emp.Emp_lname == "" {
+	if ContainsZero([]int{
+		emp.Office_id}) {
 		ErrorRes(res, http.StatusBadRequest,
-			"emp_lname is required")
-		return
-	}
-
-	// Email validation
-	if emp.Emp_email == "" {
-		ErrorRes(res, http.StatusBadRequest,
-			"email is required")
+			"office_id is required")
 		return
 	}
 
@@ -430,18 +411,6 @@ func PostEmp(res http.ResponseWriter, req *http.Request) {
 	if isEmailInDb(emp.Emp_email) {
 		ErrorRes(res, http.StatusBadRequest,
 			"email is already in use")
-		return
-	}
-
-	if emp.Office_id == 0 {
-		ErrorRes(res, http.StatusBadRequest,
-			"office_id is required")
-		return
-	}
-
-	if emp.Job_title == "" {
-		ErrorRes(res, http.StatusBadRequest,
-			"job_title is required")
 		return
 	}
 
@@ -548,35 +517,37 @@ func PostVendor(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if vendor.Vendor_name == "" {
+	if ContainsEmpty([]string{
+		vendor.Vendor_name,
+		vendor.Vendor_email,
+		vendor.Vendor_phone_num}) {
 		ErrorRes(res, http.StatusBadRequest,
-			"Vendor name is required")
+			"vendor_name, vendor_email, vendor_phone_num cannot be empty")
 		return
 	}
 
-	if vendor.Vendor_email == "" {
+	if ContainsZero([]int{
+		vendor.Addr_id}) {
 		ErrorRes(res, http.StatusBadRequest,
-			"Vendor email is required")
+			"addr_id is required")
 		return
 	}
 
-	// MAKE EMPTY STRING CHECKERS INTO A FUNCTION THAT LOOPS INSTEAD
-
-	if vendor.Vendor_phone_num == "" {
+	if !isEmailValid(vendor.Vendor_email) {
 		ErrorRes(res, http.StatusBadRequest,
-			"Vendor phone number is required")
+			"vendor_email is invalid")
+		return
+	}
+
+	if isEmailInDb(vendor.Vendor_email) {
+		ErrorRes(res, http.StatusBadRequest,
+			"vendor_email is already in use")
 		return
 	}
 
 	if !isPhoneValid(vendor.Vendor_phone_num) {
 		ErrorRes(res, http.StatusBadRequest,
 			"Vendor phone number is invalid")
-		return
-	}
-
-	if vendor.Addr_id == 0 {
-		ErrorRes(res, http.StatusBadRequest,
-			"Vendor address is required")
 		return
 	}
 
@@ -587,7 +558,6 @@ func PostVendor(res http.ResponseWriter, req *http.Request) {
 		log.Println(err)
 		return
 	}
-
 
 	res.WriteHeader(http.StatusCreated)
 	json.NewEncoder(res).Encode(OkResponse{
@@ -648,15 +618,12 @@ func PostProductLine(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if productLine.Prod_line_name == "" {
+	if ContainsEmpty([]string{
+		productLine.Prod_line_name,
+		productLine.Prod_line_desc}) {
 		ErrorRes(res, http.StatusBadRequest,
-			"prod_line_name is required")
-		return
-	}
-
-	if productLine.Prod_line_desc == "" {
-		ErrorRes(res, http.StatusBadRequest,
-			"prod_line_desc is required")
+			
+			"prod_line_name, prod_line_desc cannot be empty")
 		return
 	}
 
