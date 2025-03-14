@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"time"
 )
 
 type ErrorResponse struct {
@@ -184,6 +185,28 @@ func isProdLineInDb(prod_line string) bool {
 func isPhoneValid(phone_num string) bool {
 	re := regexp.MustCompile(`^09\d{9}$`)
 	return re.MatchString(phone_num)
+}
+
+func CustomerIdInDb(cust_id int) bool {
+	rows, err := db.Query(`SELECT
+		cust_id
+		FROM customers
+		WHERE cust_id = $1`, cust_id)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cust_id int
+		if err := rows.Scan(&cust_id); err != nil {
+			log.Println(err)
+		}
+		if cust_id == cust_id {
+			return true
+		}
+	}
+	return false
 }
 
 type AddrRequest struct {
@@ -1039,15 +1062,204 @@ func PostCustomer(res http.ResponseWriter, req *http.Request) {
 		Message: fmt.Sprintf("Customer added successfully. %d rows affected", rows),
 	})
 }
+
 // TODO: ADD A PUT ROUTE TO EDIT CUSTOMER ADDRESS
+
+// ORDERS
+type Order struct {
+	Ord_id           int       `json:"ord_id"`
+	Cust_id          int       `json:"cust_id"`
+	Ord_date         time.Time `json:"ord_date"`
+	Req_shipped_date time.Time `json:"req_shipped_date"`
+	Comments         string    `json:"comments"`
+	Rating           int       `json:"rating"`
+}
+
+type OrderByCustId struct {
+	Ord_id           int       `json:"ord_id"`
+	Ord_date         time.Time `json:"ord_date"`
+	Req_shipped_date time.Time `json:"req_shipped_date"`
+	Comments         string    `json:"comments"`
+	Rating           int       `json:"rating"`
+}
+
+func GetOrders(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	rows, err := db.Query(`SELECT
+		ord_id,
+		cust_id,
+		ord_date,
+		req_shipped_date,
+		comments,
+		rating
+		FROM orders`)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not get orders, try again later")
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	var orders []Order
+	for rows.Next() {
+		var (
+			ord_id           int
+			cust_id          int
+			ord_date         time.Time
+			req_shipped_date time.Time
+			comments         string
+			rating           int
+		)
+		if err := rows.Scan(
+			&ord_id,
+			&cust_id,
+			&ord_date,
+			&req_shipped_date,
+			&comments,
+			&rating); err != nil {
+			log.Println(err)
+			return
+		}
+		orders = append(orders, Order{
+			Ord_id:   ord_id,
+			Cust_id:  cust_id,
+			Ord_date: ord_date,
+			// take out the hour, minute, second, and nanosecond
+			Req_shipped_date: req_shipped_date.Truncate(24 * time.Hour),
+			Comments:         comments,
+			Rating:           rating,
+		})
+	}
+	json.NewEncoder(res).Encode(orders)
+}
+
+func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := db.Query(`SELECT
+		ord_id,
+		cust_id,
+		ord_date,
+		req_shipped_date,
+		comments,
+		rating
+		FROM orders
+		WHERE cust_id = $1`, cust_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not get orders, try again later")
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	var orders []OrderByCustId
+	for rows.Next() {
+		var (
+			ord_id           int
+			cust_id          int
+			ord_date         time.Time
+			req_shipped_date time.Time
+			comments         string
+			rating           int
+		)
+		if err := rows.Scan(
+			&ord_id,
+			&cust_id,
+			&ord_date,
+			&req_shipped_date,
+			&comments,
+			&rating); err != nil {
+			log.Println(err)
+			return
+		}
+		orders = append(orders, OrderByCustId{
+			Ord_id:   ord_id,
+			Ord_date: ord_date,
+			// take out the hour, minute, second, and nanosecond
+			Req_shipped_date: req_shipped_date.Truncate(24 * time.Hour),
+			Comments:         comments,
+			Rating:           rating,
+		})
+	}
+	json.NewEncoder(res).Encode(orders)
+}
+
+type OrderRequest struct {
+	Cust_id          int       `json:"cust_id"`
+	Ord_date         time.Time `json:"ord_date"`
+	Req_shipped_date time.Time `json:"req_shipped_date"`
+	Comments         string    `json:"comments"`
+	Rating           int       `json:"rating"`
+}
+
+func PostOrder(res http.ResponseWriter, req *http.Request) {
+	var order *OrderRequest
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&order)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if !CustomerIdInDb(order.Cust_id) {
+		ErrorRes(res, http.StatusBadRequest,
+			"cust_id is not in db")
+		return
+	}
+
+	if order.Ord_date.IsZero() {
+		ErrorRes(res, http.StatusBadRequest,
+			"ord_date cannot be zero")
+		return
+	}
+
+	if order.Req_shipped_date.IsZero() {
+		ErrorRes(res, http.StatusBadRequest,
+			"req_shipped_date cannot be zero")
+		return
+	}
+
+	if ContainsZero([]any{
+		order.Cust_id}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"rating cannot be zero")
+		return
+	}
+
+	if order.Rating < 1 || order.Rating > 5 {
+		ErrorRes(res, http.StatusBadRequest,
+			"rating must be between 1 and 5")
+		return
+	}
+
+	rows, err := AddOrder(order)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding order, make sure cust_id is also in database"))
+		log.Println(err)
+		return
+	}
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Order added successfully. %d rows affected", rows),
+	})
+}
 
 // PAYMENTS
 // TODO: ADD A GET ROUTE FOR GETTING PAYMENTS
 // TODO: ADD A POST ROUTE FOR ADDING PAYMENTS
-
-// ORDERS
-// TODO: ADD A GET ROUTE FOR GETTING ORDERS
-// TODO: ADD A POST ROUTE FOR ADDING ORDERS
 
 // ORDER DETAILS
 // TODO: ADD A GET ROUTE FOR GETTING ORDER DETAILS

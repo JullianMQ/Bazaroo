@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -430,6 +431,34 @@ func AddCustomer(customer *CustomerRequest) (int64, error) {
 		customer.Addr_id,
 		customer.Sales_rep_emp_id,
 		customer.Cred_limit)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func AddOrder(order *OrderRequest) (int64, error) {
+	var err error
+	result, err := db.Exec(`INSERT INTO orders (
+		cust_id,
+		ord_date,
+		req_shipped_date,
+		comments,
+		rating
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5
+	)`,
+		order.Cust_id,
+		order.Ord_date,
+		// Add 1 day and take out the hour, minute, second, and nanosecond
+		order.Req_shipped_date.Truncate(24 * time.Hour),
+		order.Comments,
+		order.Rating)
 	if err != nil {
 		return 0, err
 	}
