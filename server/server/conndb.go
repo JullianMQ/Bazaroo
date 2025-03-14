@@ -352,3 +352,20 @@ func GetVendorById(id int64) (Vendor, error) {
 	}
 	return vendor, nil
 }
+
+func AddProductLine(productLine *ProductLineRequest) (int64, error) {
+	rows, err := db.Exec(`INSERT INTO product_lines (
+		prod_line_name,
+		prod_line_desc
+	) VALUES (
+		$1,
+		$2
+	)`,
+		productLine.Prod_line_name,
+		productLine.Prod_line_desc)
+	if err != nil {
+		return 0, err
+	}
+	id, err := rows.RowsAffected()
+	return id, err
+}

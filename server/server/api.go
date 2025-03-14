@@ -585,3 +585,82 @@ func PostVendor(res http.ResponseWriter, req *http.Request) {
 		Message: fmt.Sprintf("Vendor added successfully. %d rows affected", rows),
 	})
 }
+
+type ProductLine struct {
+	Prod_line_name string `json:"prod_line_name"`
+	Prod_line_desc string `json:"prod_line_desc"`
+}
+
+func GetProductLine(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	rows, err := db.Query(`SELECT
+		prod_line_name,
+		prod_line_desc
+		FROM product_lines`)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	var productLines []ProductLine
+	for rows.Next() {
+		var (
+			prod_line_name string
+			prod_line_desc string
+		)
+		if err := rows.Scan(
+			&prod_line_name,
+			&prod_line_desc); err != nil {
+			log.Println(err)
+			return
+		}
+		productLines = append(productLines, ProductLine{
+			Prod_line_name: prod_line_name,
+			Prod_line_desc: prod_line_desc,
+		})
+	}
+	json.NewEncoder(res).Encode(productLines)
+}
+
+type ProductLineRequest struct {
+	Prod_line_name string `json:"prod_line_name"`
+	Prod_line_desc string `json:"prod_line_desc"`
+}
+
+func PostProductLine(res http.ResponseWriter, req *http.Request) {
+	var productLine *ProductLineRequest
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&productLine)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if productLine.Prod_line_name == "" {
+		ErrorRes(res, http.StatusBadRequest,
+			"prod_line_name is required")
+		return
+	}
+
+	if productLine.Prod_line_desc == "" {
+		ErrorRes(res, http.StatusBadRequest,
+			"prod_line_desc is required")
+		return
+	}
+
+	rows, err := AddProductLine(productLine)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding product line, try again later"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Product line added successfully. %d rows affected", rows),
+	})
+}
