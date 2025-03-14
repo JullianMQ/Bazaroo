@@ -404,3 +404,35 @@ func AddProduct(product *ProductRequest) (int64, error) {
 	id, err := result.RowsAffected()
 	return id, err
 }
+
+func AddCustomer(customer *CustomerRequest) (int64, error) {
+	result, err := db.Exec(`INSERT INTO customers (
+		cust_fname,
+		cust_lname,
+		cust_email,
+		phone_num,
+		addr_id,
+		sales_rep_emp_id,
+		cred_limit
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5,
+		$6,
+		$7
+	)`,
+		customer.Cust_fname,
+		customer.Cust_lname,
+		customer.Cust_email,
+		customer.Phone_num,
+		customer.Addr_id,
+		customer.Sales_rep_emp_id,
+		customer.Cred_limit)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}

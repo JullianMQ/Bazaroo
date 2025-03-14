@@ -54,6 +54,7 @@ func containsInt(v []int, target int) bool {
 func containsFloat(v []float64, target float64) bool {
 	return slices.Contains(v, target)
 }
+
 func ErrorRes(res http.ResponseWriter, status int, mess string) {
 	res.WriteHeader(status)
 	json.NewEncoder(res).Encode(ErrorResponse{
@@ -74,11 +75,51 @@ func isEmailValid(email string) bool {
 	return true
 }
 
-func isEmailInDb(email string) bool {
+func isAddrIdInDb(addr_id int) bool {
 	rows, err := db.Query(`SELECT
-		emp_email
-		FROM employees
-		WHERE emp_email = $1`, email)
+		addr_id
+		FROM addresses
+		WHERE addr_id = $1`, addr_id)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var addr_id int
+		if err := rows.Scan(&addr_id); err != nil {
+			log.Println(err)
+		}
+		if addr_id == addr_id {
+			return true
+		}
+	}
+	return false
+}
+
+func isEmailInDb(email string, ut string) bool {
+	var rows *sql.Rows
+	var err error
+
+	switch ut {
+	case "customer":
+		rows, err = db.Query(`SELECT
+			cust_email
+			FROM customers
+			WHERE cust_email = $1`, email)
+	case "employee":
+		rows, err = db.Query(`SELECT
+			emp_email
+			FROM employees
+			WHERE emp_email = $1`, email)
+	case "vendor":
+		rows, err = db.Query(`SELECT
+			vendor_email
+			FROM vendors
+			WHERE vendor_email = $1`, email)
+	default:
+		panic("Invalid user type")
+	}
 	if err != nil {
 		panic(err)
 	}
@@ -90,6 +131,28 @@ func isEmailInDb(email string) bool {
 			log.Println(err)
 		}
 		if emp_email == email {
+			return true
+		}
+	}
+	return false
+}
+
+func isEmpIdInDb(emp_id int) bool {
+	rows, err := db.Query(`SELECT
+		emp_id
+		FROM employees
+		WHERE emp_id = $1`, emp_id)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var emp_id int
+		if err := rows.Scan(&emp_id); err != nil {
+			log.Println(err)
+		}
+		if emp_id == emp_id {
 			return true
 		}
 	}
@@ -458,7 +521,7 @@ func PostEmp(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if isEmailInDb(emp.Emp_email) {
+	if isEmailInDb(emp.Emp_email, "employee") {
 		ErrorRes(res, http.StatusBadRequest,
 			"email is already in use")
 		return
@@ -589,7 +652,7 @@ func PostVendor(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if isEmailInDb(vendor.Vendor_email) {
+	if isEmailInDb(vendor.Vendor_email, "vendor") {
 		ErrorRes(res, http.StatusBadRequest,
 			"vendor_email is already in use")
 		return
@@ -822,3 +885,180 @@ func PostProduct(res http.ResponseWriter, req *http.Request) {
 		Message: fmt.Sprintf("Product added successfully. %d rows affected", rows),
 	})
 }
+
+// CUSTOMERS
+type Customer struct {
+	Cust_id          int     `json:"cust_id"`
+	Cust_fname       string  `json:"cust_fname"`
+	Cust_lname       string  `json:"cust_lname"`
+	Cust_email       string  `json:"cust_email"`
+	Phone_num        string  `json:"phone_num"`
+	Addr_id          int     `json:"addr_id"`
+	Sales_rep_emp_id int     `json:"sales_rep_emp_id"`
+	Cred_limit       float64 `json:"cred_limit"`
+}
+
+func GetCustomers(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	rows, err := db.Query(`SELECT
+		cust_id,
+		cust_fname,
+		cust_lname,
+		cust_email,
+		phone_num,
+		addr_id,
+		sales_rep_emp_id,
+		cred_limit
+		FROM customers`)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not get customers, try again later")
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	var customers []Customer
+	for rows.Next() {
+		var (
+			cust_id          int
+			cust_fname       string
+			cust_lname       string
+			cust_email       string
+			phone_num        string
+			addr_id          int
+			sales_rep_emp_id int
+			cred_limit       float64
+		)
+		if err := rows.Scan(
+			&cust_id,
+			&cust_fname,
+			&cust_lname,
+			&cust_email,
+			&phone_num,
+			&addr_id,
+			&sales_rep_emp_id,
+			&cred_limit); err != nil {
+			log.Println(err)
+			return
+		}
+		customers = append(customers, Customer{
+			Cust_id:          cust_id,
+			Cust_fname:       cust_fname,
+			Cust_lname:       cust_lname,
+			Cust_email:       cust_email,
+			Phone_num:        phone_num,
+			Addr_id:          addr_id,
+			Sales_rep_emp_id: sales_rep_emp_id,
+			Cred_limit:       cred_limit,
+		})
+	}
+	json.NewEncoder(res).Encode(customers)
+}
+
+type CustomerRequest struct {
+	Cust_fname       string  `json:"cust_fname"`
+	Cust_lname       string  `json:"cust_lname"`
+	Cust_email       string  `json:"cust_email"`
+	Phone_num        string  `json:"phone_num"`
+	Addr_id          int     `json:"addr_id"`
+	Sales_rep_emp_id int     `json:"sales_rep_emp_id"`
+	Cred_limit       float64 `json:"cred_limit"`
+}
+
+func PostCustomer(res http.ResponseWriter, req *http.Request) {
+	var customer *CustomerRequest
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&customer)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		customer.Cust_fname,
+		customer.Cust_lname,
+		customer.Cust_email}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"cust_fname, cust_lname, cust_email cannot be empty")
+		return
+	}
+
+	if ContainsZero([]any{
+		customer.Cred_limit}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"cred_limit cannot be zero")
+		return
+	}
+
+	if !isEmailValid(customer.Cust_email) {
+		ErrorRes(res, http.StatusBadRequest,
+			"cust_email is invalid")
+		return
+	}
+
+	if isEmailInDb(customer.Cust_email, "customer") {
+		ErrorRes(res, http.StatusBadRequest,
+			"cust_email is already in use")
+		return
+	}
+
+	if customer.Addr_id != 0 {
+		if !isAddrIdInDb(customer.Addr_id) {
+			ErrorRes(res, http.StatusBadRequest,
+				"addr_id is invalid")
+			return
+		}
+	}
+
+	if customer.Phone_num != "" {
+		if !isPhoneValid(customer.Phone_num) {
+			ErrorRes(res, http.StatusBadRequest,
+				"phone_num is invalid")
+			return
+		}
+	}
+
+	if !isEmpIdInDb(customer.Sales_rep_emp_id) {
+		ErrorRes(res, http.StatusBadRequest,
+			"sales_rep_emp_id is invalid")
+		return
+	}
+
+	rows, err := AddCustomer(customer)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding customer, make sure addr_id is also in database"))
+		log.Println(err)
+		return
+	}
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Customer added successfully. %d rows affected", rows),
+	})
+}
+// TODO: ADD A PUT ROUTE TO EDIT CUSTOMER ADDRESS
+
+// PAYMENTS
+// TODO: ADD A GET ROUTE FOR GETTING PAYMENTS
+// TODO: ADD A POST ROUTE FOR ADDING PAYMENTS
+
+// ORDERS
+// TODO: ADD A GET ROUTE FOR GETTING ORDERS
+// TODO: ADD A POST ROUTE FOR ADDING ORDERS
+
+// ORDER DETAILS
+// TODO: ADD A GET ROUTE FOR GETTING ORDER DETAILS
+// TODO: ADD A POST ROUTE FOR ADDING ORDER DETAILS
+
+// EMPLOYEES
+// TODO: ADD A PUT ROUTE FOR EDITING EMPLOYEES
+// TODO: ADD A DELETE ROUTE FOR EDITING PRODUCTS
+
+// ADDRESSES
+// TODO: ADD A PUT ROUTE FOR EDITING ADDRESSES
+
+// PRODUCTS
+// TODO: ADD A PUT ROUTE FOR EDITING PRODUCTS
