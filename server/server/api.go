@@ -9,6 +9,7 @@ import (
 	"net/mail"
 	"strconv"
 	"regexp"
+	"slices"
 )
 
 type ErrorResponse struct {
@@ -17,6 +18,14 @@ type ErrorResponse struct {
 
 type OkResponse struct {
 	Message string `json:"message"`
+}
+
+func ContainsEmpty(s []string) bool {
+	return slices.Contains(s, "")
+}
+
+func ContainsZero(v []int) bool {
+	return slices.Contains(v, 0)
 }
 
 func ErrorRes(res http.ResponseWriter, status int, mess string) {
@@ -663,4 +672,71 @@ func PostProductLine(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(OkResponse{
 		Message: fmt.Sprintf("Product line added successfully. %d rows affected", rows),
 	})
+}
+
+type Product struct {
+	Prod_id int `json:"prod_id"`
+	Prod_name string `json:"prod_name"`
+	Prod_line_name string `json:"prod_line_name"`
+	Prod_vendor_id int `json:"prod_vendor_id"`
+	Prod_desc string `json:"prod_desc"`
+	Quan_in_stock int `json:"quan_in_stock"`
+	Buy_price float64 `json:"buy_price"`
+	Msrp float64 `json:"msrp"`
+}
+
+func GetProducts(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	rows, err := db.Query(`SELECT
+		prod_id,
+		prod_name,
+		prod_line_name,
+		prod_vendor_id,
+		prod_desc,
+		quan_in_stock,
+		buy_price,
+		msrp
+		FROM products`)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	var products []Product
+	for rows.Next() {
+		var (
+			prod_id int
+			prod_name string
+			prod_line_name string
+			prod_vendor_id int
+			prod_desc string
+			quan_in_stock int
+			buy_price float64
+			msrp float64
+		)
+		if err := rows.Scan(
+			&prod_id,
+			&prod_name,
+			&prod_line_name,
+			&prod_vendor_id,
+			&prod_desc,
+			&quan_in_stock,
+			&buy_price,
+			&msrp); err != nil {
+			log.Println(err)
+			return
+		}
+		products = append(products, Product{
+			Prod_id: prod_id,
+			Prod_name: prod_name,
+			Prod_line_name: prod_line_name,
+			Prod_vendor_id: prod_vendor_id,
+			Prod_desc: prod_desc,
+			Quan_in_stock: quan_in_stock,
+			Buy_price: buy_price,
+			Msrp: msrp,
+		})
+	}
+	json.NewEncoder(res).Encode(products)
 }

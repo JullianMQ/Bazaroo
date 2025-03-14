@@ -275,7 +275,6 @@ func AddOffice(office *OfficeRequest) (int64, error) {
 }
 
 // TODO: GET ALL EMPLOYEES
-// func GetEmp()
 
 func GetEmpById(id int64) (Employee, error) {
 	var emp Employee
