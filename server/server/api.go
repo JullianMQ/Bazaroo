@@ -62,7 +62,7 @@ func isEmailInDb(e string) bool {
 }
 
 func isPhoneValid(p string) bool {
-	re := regexp.MustCompile(`^09[0-9]{9}$`)
+	re := regexp.MustCompile(`^09\d{9}$`)
 	return re.MatchString(p)
 }
 
@@ -551,17 +551,37 @@ func PostVendor(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// MAKE EMPTY STRING CHECKERS INTO A FUNCTION THAT LOOPS INSTEAD
+
 	if vendor.Vendor_phone_num == "" {
 		ErrorRes(res, http.StatusBadRequest,
 			"Vendor phone number is required")
 		return
 	}
 
-	if isPhoneValid(vendor.Vendor_phone_num) {
+	if !isPhoneValid(vendor.Vendor_phone_num) {
 		ErrorRes(res, http.StatusBadRequest,
 			"Vendor phone number is invalid")
 		return
 	}
 
-	json.NewEncoder(res).Encode(vendor)
+	if vendor.Addr_id == 0 {
+		ErrorRes(res, http.StatusBadRequest,
+			"Vendor address is required")
+		return
+	}
+
+	rows, err := AddVendor(vendor)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding vendor, make sure addr_id is also in database"))
+		log.Println(err)
+		return
+	}
+
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Vendor added successfully. %d rows affected", rows),
+	})
 }

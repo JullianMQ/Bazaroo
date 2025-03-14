@@ -324,7 +324,7 @@ func AddEmp(emp *EmployeeRequest) (int64, error) {
 	return id, err
 }
 
-func AddVendor(vendor Vendor) (int64, error) {
+func AddVendor(vendor *VendorRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO vendors (vendor_name, vendor_email, vendor_phone_num, addr_id) VALUES ($1, $2, $3, $4)`,
 		vendor.Vendor_name,
 		vendor.Vendor_email,
