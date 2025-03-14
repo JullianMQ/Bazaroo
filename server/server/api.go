@@ -7,9 +7,9 @@ import (
 	"log"
 	"net/http"
 	"net/mail"
-	"strconv"
 	"regexp"
 	"slices"
+	"strconv"
 )
 
 type ErrorResponse struct {
@@ -24,10 +24,36 @@ func ContainsEmpty(s []string) bool {
 	return slices.Contains(s, "")
 }
 
-func ContainsZero(v []int) bool {
-	return slices.Contains(v, 0)
+func ContainsZero(v any) bool {
+	switch values := v.(type) {
+	case []int:
+		return containsInt(values, 0)
+	case []float64:
+		return containsFloat(values, 0.0)
+	case []any:
+		for _, value := range values {
+			if value == 0 {
+				return true
+			}
+		}
+		for _, value := range values {
+			if value == 0.0 {
+				return true
+			}
+		}
+		return false
+	default:
+		return false
+	}
 }
 
+func containsInt(v []int, target int) bool {
+	return slices.Contains(v, target)
+}
+
+func containsFloat(v []float64, target float64) bool {
+	return slices.Contains(v, target)
+}
 func ErrorRes(res http.ResponseWriter, status int, mess string) {
 	res.WriteHeader(status)
 	json.NewEncoder(res).Encode(ErrorResponse{
@@ -41,18 +67,18 @@ func GetRoot(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(myMess)
 }
 
-func isEmailValid(e string) bool {
-	if _, err := mail.ParseAddress(e); err != nil {
+func isEmailValid(email string) bool {
+	if _, err := mail.ParseAddress(email); err != nil {
 		return false
 	}
 	return true
 }
 
-func isEmailInDb(e string) bool {
+func isEmailInDb(email string) bool {
 	rows, err := db.Query(`SELECT
 		emp_email
 		FROM employees
-		WHERE emp_email = $1`, e)
+		WHERE emp_email = $1`, email)
 	if err != nil {
 		panic(err)
 	}
@@ -63,25 +89,47 @@ func isEmailInDb(e string) bool {
 		if err := rows.Scan(&emp_email); err != nil {
 			log.Println(err)
 		}
-		if emp_email == e {
+		if emp_email == email {
 			return true
 		}
 	}
 	return false
 }
 
-func isPhoneValid(p string) bool {
+func isProdLineInDb(prod_line string) bool {
+	rows, err := db.Query(`SELECT
+		prod_line_name
+		FROM product_lines
+		WHERE prod_line_name = $1`, prod_line)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var prod_line_name string
+		if err := rows.Scan(&prod_line_name); err != nil {
+			log.Println(err)
+		}
+		if prod_line_name == prod_line {
+			return true
+		}
+	}
+	return false
+}
+
+func isPhoneValid(phone_num string) bool {
 	re := regexp.MustCompile(`^09\d{9}$`)
-	return re.MatchString(p)
+	return re.MatchString(phone_num)
 }
 
 type AddrRequest struct {
-	Addr_line1  string `json:"addr_line1"`
-	Addr_line2  string `json:"addr_line2"`
-	City        string `json:"city"`
-	State       string `json:"state"`
-	Postal_code string `json:"postal_code"`
-	Country     string `json:"country"`
+	Addr_line1  string         `json:"addr_line1"`
+	Addr_line2  sql.NullString `json:"addr_line2"`
+	City        string         `json:"city"`
+	State       string         `json:"state"`
+	Postal_code string         `json:"postal_code"`
+	Country     string         `json:"country"`
 }
 
 type AddrResponse struct {
@@ -106,7 +154,9 @@ func GetAddr(res http.ResponseWriter, req *http.Request) {
 		country
 		FROM addresses`)
 	if err != nil {
-		panic(err)
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
 	}
 	defer rows.Close()
 
@@ -429,11 +479,11 @@ func PostEmp(res http.ResponseWriter, req *http.Request) {
 }
 
 type Vendor struct {
-	Vendor_id int `json:"vendor_id"`
-	Vendor_name string `json:"vendor_name"`
-	Vendor_email string `json:"vendor_email"`
+	Vendor_id        int    `json:"vendor_id"`
+	Vendor_name      string `json:"vendor_name"`
+	Vendor_email     string `json:"vendor_email"`
 	Vendor_phone_num string `json:"vendor_phone_num"`
-	Addr_id int `json:"addr_id"`
+	Addr_id          int    `json:"addr_id"`
 }
 
 func GetVendors(res http.ResponseWriter, req *http.Request) {
@@ -466,12 +516,12 @@ func GetVendors(res http.ResponseWriter, req *http.Request) {
 			log.Println(err)
 			return
 		}
-		vendor := Vendor {
-			Vendor_id: vendor_id,
-			Vendor_name: vendor_name,
-			Vendor_email: vendor_email,
+		vendor := Vendor{
+			Vendor_id:        vendor_id,
+			Vendor_name:      vendor_name,
+			Vendor_email:     vendor_email,
 			Vendor_phone_num: vendor_phone_num,
-			Addr_id: addr_id,
+			Addr_id:          addr_id,
 		}
 		vendors = append(vendors, vendor)
 	}
@@ -500,10 +550,10 @@ func GetVendorId(res http.ResponseWriter, req *http.Request) {
 }
 
 type VendorRequest struct {
-	Vendor_name string `json:"vendor_name"`
-	Vendor_email string `json:"vendor_email"`
+	Vendor_name      string `json:"vendor_name"`
+	Vendor_email     string `json:"vendor_email"`
 	Vendor_phone_num string `json:"vendor_phone_num"`
-	Addr_id int `json:"addr_id"`
+	Addr_id          int    `json:"addr_id"`
 }
 
 func PostVendor(res http.ResponseWriter, req *http.Request) {
@@ -566,8 +616,8 @@ func PostVendor(res http.ResponseWriter, req *http.Request) {
 }
 
 type ProductLine struct {
-	Prod_line_name string `json:"prod_line_name"`
-	Prod_line_desc string `json:"prod_line_desc"`
+	Prod_line_name string         `json:"prod_line_name"`
+	Prod_line_desc sql.NullString `json:"prod_line_desc"`
 }
 
 func GetProductLine(res http.ResponseWriter, req *http.Request) {
@@ -586,7 +636,7 @@ func GetProductLine(res http.ResponseWriter, req *http.Request) {
 	for rows.Next() {
 		var (
 			prod_line_name string
-			prod_line_desc string
+			prod_line_desc sql.NullString
 		)
 		if err := rows.Scan(
 			&prod_line_name,
@@ -603,8 +653,8 @@ func GetProductLine(res http.ResponseWriter, req *http.Request) {
 }
 
 type ProductLineRequest struct {
-	Prod_line_name string `json:"prod_line_name"`
-	Prod_line_desc string `json:"prod_line_desc"`
+	Prod_line_name string         `json:"prod_line_name"`
+	Prod_line_desc sql.NullString `json:"prod_line_desc"`
 }
 
 func PostProductLine(res http.ResponseWriter, req *http.Request) {
@@ -619,10 +669,9 @@ func PostProductLine(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if ContainsEmpty([]string{
-		productLine.Prod_line_name,
-		productLine.Prod_line_desc}) {
+		productLine.Prod_line_name}) {
 		ErrorRes(res, http.StatusBadRequest,
-			
+
 			"prod_line_name, prod_line_desc cannot be empty")
 		return
 	}
@@ -642,14 +691,15 @@ func PostProductLine(res http.ResponseWriter, req *http.Request) {
 }
 
 type Product struct {
-	Prod_id int `json:"prod_id"`
-	Prod_name string `json:"prod_name"`
-	Prod_line_name string `json:"prod_line_name"`
-	Prod_vendor_id int `json:"prod_vendor_id"`
-	Prod_desc string `json:"prod_desc"`
-	Quan_in_stock int `json:"quan_in_stock"`
-	Buy_price float64 `json:"buy_price"`
-	Msrp float64 `json:"msrp"`
+	Prod_id        int            `json:"prod_id"`
+	Prod_name      string         `json:"prod_name"`
+	Prod_line_name string         `json:"prod_line_name"`
+	Prod_vendor_id int            `json:"prod_vendor_id"`
+	Prod_desc      sql.NullString `json:"prod_desc"`
+	Prod_image     sql.NullString `json:"prod_image"`
+	Quan_in_stock  int            `json:"quan_in_stock"`
+	Buy_price      float64        `json:"buy_price"`
+	Msrp           float64        `json:"msrp"`
 }
 
 func GetProducts(res http.ResponseWriter, req *http.Request) {
@@ -660,11 +710,14 @@ func GetProducts(res http.ResponseWriter, req *http.Request) {
 		prod_line_name,
 		prod_vendor_id,
 		prod_desc,
+		prod_image,
 		quan_in_stock,
 		buy_price,
 		msrp
 		FROM products`)
 	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
 		log.Println(err)
 		return
 	}
@@ -673,14 +726,15 @@ func GetProducts(res http.ResponseWriter, req *http.Request) {
 	var products []Product
 	for rows.Next() {
 		var (
-			prod_id int
-			prod_name string
+			prod_id        int
+			prod_name      string
 			prod_line_name string
 			prod_vendor_id int
-			prod_desc string
-			quan_in_stock int
-			buy_price float64
-			msrp float64
+			prod_desc      sql.NullString
+			prod_image     sql.NullString
+			quan_in_stock  int
+			buy_price      float64
+			msrp           float64
 		)
 		if err := rows.Scan(
 			&prod_id,
@@ -688,6 +742,7 @@ func GetProducts(res http.ResponseWriter, req *http.Request) {
 			&prod_line_name,
 			&prod_vendor_id,
 			&prod_desc,
+			&prod_image,
 			&quan_in_stock,
 			&buy_price,
 			&msrp); err != nil {
@@ -695,15 +750,75 @@ func GetProducts(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 		products = append(products, Product{
-			Prod_id: prod_id,
-			Prod_name: prod_name,
+			Prod_id:        prod_id,
+			Prod_name:      prod_name,
 			Prod_line_name: prod_line_name,
 			Prod_vendor_id: prod_vendor_id,
-			Prod_desc: prod_desc,
-			Quan_in_stock: quan_in_stock,
-			Buy_price: buy_price,
-			Msrp: msrp,
+			Prod_desc:      prod_desc,
+			Prod_image:     prod_image,
+			Quan_in_stock:  quan_in_stock,
+			Buy_price:      buy_price,
+			Msrp:           msrp,
 		})
 	}
 	json.NewEncoder(res).Encode(products)
+}
+
+type ProductRequest struct {
+	Prod_name      string         `json:"prod_name"`
+	Prod_line_name string         `json:"prod_line_name"`
+	Prod_vendor_id int            `json:"prod_vendor_id"`
+	Prod_desc      sql.NullString `json:"prod_desc"`
+	Prod_image     sql.NullString `json:"prod_image"`
+	Quan_in_stock  int            `json:"quan_in_stock"`
+	Buy_price      float64        `json:"buy_price"`
+	Msrp           float64        `json:"msrp"`
+}
+
+func PostProduct(res http.ResponseWriter, req *http.Request) {
+	var product *ProductRequest
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&product)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		product.Prod_name,
+		product.Prod_line_name}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"prod_name, prod_line_name cannot be empty")
+		return
+	}
+
+	if ContainsZero([]any{
+		product.Quan_in_stock,
+		product.Buy_price,
+		product.Msrp}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"quan_in_stock, buy_price, msrp cannot be zero")
+		return
+	}
+
+	if !isProdLineInDb(product.Prod_line_name) {
+		ErrorRes(res, http.StatusBadRequest,
+			"prod_line_name not in database")
+		return
+	}
+
+	rows, err := AddProduct(product)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding product, make sure prod_vendor_id is also in database"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Product added successfully. %d rows affected", rows),
+	})
 }

@@ -140,6 +140,7 @@ func CreateSchema() {
 		prod_line_name TEXT NOT NULL REFERENCES product_lines(prod_line_name),
 		prod_vendor_id INT NOT NULL REFERENCES vendors(vendor_id),
 		prod_desc TEXT,
+		prod_image TEXT,
 		quan_in_stock INT,
 		buy_price NUMERIC(10,2),
 		msrp NUMERIC(10,2)
@@ -366,5 +367,40 @@ func AddProductLine(productLine *ProductLineRequest) (int64, error) {
 		return 0, err
 	}
 	id, err := rows.RowsAffected()
+	return id, err
+}
+
+func AddProduct(product *ProductRequest) (int64, error) {
+	result, err := db.Exec(`INSERT INTO products (
+		prod_name,
+		prod_line_name,
+		prod_vendor_id,
+		prod_desc,
+		prod_image,
+		quan_in_stock,
+		buy_price,
+		msrp
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5,
+		$6,
+		$7,
+		$8
+	)`,
+		product.Prod_name,
+		product.Prod_line_name,
+		product.Prod_vendor_id,
+		product.Prod_desc,
+		product.Prod_image,
+		product.Quan_in_stock,
+		product.Buy_price,
+		product.Msrp)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
 	return id, err
 }
