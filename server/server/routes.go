@@ -13,9 +13,9 @@ var PORT = ":3000"
 func ServeHttp() {
 	mux := http.NewServeMux()
 	corsOpts := cors.Options{
-		AllowedOrigins: []string{ "*" },
-		AllowedMethods: []string{"GET", "POST", "DELETE", "PATCH", "PUT"},
-		AllowedHeaders: []string{"Content-Type", "Authorization"},
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "DELETE", "PATCH", "PUT"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
 	}
 
@@ -36,6 +36,19 @@ func ServeHttp() {
 	mux.HandleFunc("GET /v1/vendors", GetVendors)
 	mux.HandleFunc("GET /v1/vendors/", GetVendorId)
 	mux.HandleFunc("POST /v1/vendors", PostVendor)
+
+	mux.HandleFunc("GET /v1/prodlines", GetProductLine)
+	mux.HandleFunc("POST /v1/prodlines", PostProductLine)
+
+	mux.HandleFunc("GET /v1/products", GetProducts)
+	mux.HandleFunc("POST /v1/products", PostProduct)
+
+	mux.HandleFunc("GET /v1/customers", GetCustomers)
+	mux.HandleFunc("POST /v1/customers", PostCustomer)
+
+	mux.HandleFunc("GET /v1/orders", GetOrders)
+	mux.HandleFunc("GET /v1/orders/", GetOrderByCustId)
+	mux.HandleFunc("POST /v1/orders", PostOrder)
 
 	if err := http.ListenAndServe(PORT, handler); err != nil {
 		log.Fatal(err)

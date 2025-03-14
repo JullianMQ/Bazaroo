@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -140,6 +141,7 @@ func CreateSchema() {
 		prod_line_name TEXT NOT NULL REFERENCES product_lines(prod_line_name),
 		prod_vendor_id INT NOT NULL REFERENCES vendors(vendor_id),
 		prod_desc TEXT,
+		prod_image TEXT,
 		quan_in_stock INT,
 		buy_price NUMERIC(10,2),
 		msrp NUMERIC(10,2)
@@ -275,7 +277,6 @@ func AddOffice(office *OfficeRequest) (int64, error) {
 }
 
 // TODO: GET ALL EMPLOYEES
-// func GetEmp()
 
 func GetEmpById(id int64) (Employee, error) {
 	var emp Employee
@@ -324,7 +325,7 @@ func AddEmp(emp *EmployeeRequest) (int64, error) {
 	return id, err
 }
 
-func AddVendor(vendor Vendor) (int64, error) {
+func AddVendor(vendor *VendorRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO vendors (vendor_name, vendor_email, vendor_phone_num, addr_id) VALUES ($1, $2, $3, $4)`,
 		vendor.Vendor_name,
 		vendor.Vendor_email,
@@ -351,4 +352,116 @@ func GetVendorById(id int64) (Vendor, error) {
 		return vendor, err
 	}
 	return vendor, nil
+}
+
+func AddProductLine(productLine *ProductLineRequest) (int64, error) {
+	rows, err := db.Exec(`INSERT INTO product_lines (
+		prod_line_name,
+		prod_line_desc
+	) VALUES (
+		$1,
+		$2
+	)`,
+		productLine.Prod_line_name,
+		productLine.Prod_line_desc)
+	if err != nil {
+		return 0, err
+	}
+	id, err := rows.RowsAffected()
+	return id, err
+}
+
+func AddProduct(product *ProductRequest) (int64, error) {
+	result, err := db.Exec(`INSERT INTO products (
+		prod_name,
+		prod_line_name,
+		prod_vendor_id,
+		prod_desc,
+		prod_image,
+		quan_in_stock,
+		buy_price,
+		msrp
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5,
+		$6,
+		$7,
+		$8
+	)`,
+		product.Prod_name,
+		product.Prod_line_name,
+		product.Prod_vendor_id,
+		product.Prod_desc,
+		product.Prod_image,
+		product.Quan_in_stock,
+		product.Buy_price,
+		product.Msrp)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func AddCustomer(customer *CustomerRequest) (int64, error) {
+	result, err := db.Exec(`INSERT INTO customers (
+		cust_fname,
+		cust_lname,
+		cust_email,
+		phone_num,
+		addr_id,
+		sales_rep_emp_id,
+		cred_limit
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5,
+		$6,
+		$7
+	)`,
+		customer.Cust_fname,
+		customer.Cust_lname,
+		customer.Cust_email,
+		customer.Phone_num,
+		customer.Addr_id,
+		customer.Sales_rep_emp_id,
+		customer.Cred_limit)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func AddOrder(order *OrderRequest) (int64, error) {
+	var err error
+	result, err := db.Exec(`INSERT INTO orders (
+		cust_id,
+		ord_date,
+		req_shipped_date,
+		comments,
+		rating
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5
+	)`,
+		order.Cust_id,
+		order.Ord_date,
+		// Add 1 day and take out the hour, minute, second, and nanosecond
+		order.Req_shipped_date.Truncate(24 * time.Hour),
+		order.Comments,
+		order.Rating)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
 }
