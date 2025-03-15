@@ -209,6 +209,28 @@ func CustomerIdInDb(cust_id int) bool {
 	return false
 }
 
+func isOrderIdInDb(order_id int) bool {
+	rows, err := db.Query(`SELECT
+		ord_id
+		FROM orders
+		WHERE ord_id = $1`, order_id)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var ord_id int
+		if err := rows.Scan(&ord_id); err != nil {
+			log.Println(err)
+		}
+		if ord_id == order_id {
+			return true
+		}
+	}
+	return false
+}
+
 type AddrRequest struct {
 	Addr_line1  string         `json:"addr_line1"`
 	Addr_line2  sql.NullString `json:"addr_line2"`
@@ -909,7 +931,6 @@ func PostProduct(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
-// CUSTOMERS
 type Customer struct {
 	Cust_id          int     `json:"cust_id"`
 	Cust_fname       string  `json:"cust_fname"`
@@ -1063,9 +1084,6 @@ func PostCustomer(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
-// TODO: ADD A PUT ROUTE TO EDIT CUSTOMER ADDRESS
-
-// ORDERS
 type Order struct {
 	Ord_id           int       `json:"ord_id"`
 	Cust_id          int       `json:"cust_id"`
@@ -1257,20 +1275,162 @@ func PostOrder(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
-// PAYMENTS
-// TODO: ADD A GET ROUTE FOR GETTING PAYMENTS
-// TODO: ADD A POST ROUTE FOR ADDING PAYMENTS
+type Payment struct {
+	Payment_id     int       `json:"payment_id"`
+	Cust_id        int       `json:"cust_id"`
+	Payment_date   time.Time `json:"payment_date"`
+	Amount         float64   `json:"amount"`
+	Payment_status string    `json:"payment_status"`
+	Ord_id         int       `json:"ord_id"`
+}
 
-// ORDER DETAILS
-// TODO: ADD A GET ROUTE FOR GETTING ORDER DETAILS
-// TODO: ADD A POST ROUTE FOR ADDING ORDER DETAILS
+func GetPaymentsByCustId(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id, make sure that it is included in the query."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := db.Query(`SELECT
+		payment_id,
+		cust_id,
+		payment_date,
+		amount,
+		payment_status,
+		ord_id
+		FROM payments
+		WHERE cust_id = $1`, cust_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not get payments, try again later")
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	var payments []Payment
+	for rows.Next() {
+		var (
+			payment_id     int
+			cust_id        int
+			payment_date   time.Time
+			amount         float64
+			payment_status string
+			ord_id         int
+		)
+		if err := rows.Scan(
+			&payment_id,
+			&cust_id,
+			&payment_date,
+			&amount,
+			&payment_status,
+			&ord_id); err != nil {
+			log.Println(err)
+			return
+		}
+		payments = append(payments, Payment{
+			Payment_id:     payment_id,
+			Cust_id:        cust_id,
+			Payment_date:   payment_date,
+			Amount:         amount,
+			Payment_status: payment_status,
+			Ord_id:         ord_id,
+		})
+	}
+	json.NewEncoder(res).Encode(payments)
+}
+
+type PaymentRequest struct {
+	Cust_id        int       `json:"cust_id"`
+	Payment_date   time.Time `json:"payment_date"`
+	Amount         float64   `json:"amount"`
+	Payment_status string    `json:"payment_status"`
+	Ord_id         int       `json:"ord_id"`
+}
+
+func PostPayment(res http.ResponseWriter, req *http.Request) {
+	var payment *PaymentRequest
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&payment)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		payment.Payment_status,
+	}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"payment_status cannot be empty")
+		return
+	}
+
+	if ContainsZero([]any{
+		payment.Cust_id,
+		payment.Amount,
+		payment.Ord_id}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"cust_id is required")
+		return
+	}
+
+	if payment.Payment_date.IsZero() {
+		ErrorRes(res, http.StatusBadRequest,
+			"payment_date cannot be zero")
+		return
+	}
+
+	if payment.Amount <= 0 {
+		ErrorRes(res, http.StatusBadRequest,
+			"amount must be greater than zero")
+		return
+	}
+
+	if !CustomerIdInDb(payment.Cust_id) {
+		ErrorRes(res, http.StatusBadRequest,
+			"cust_id is invalid")
+		return
+	}
+
+	if !isOrderIdInDb(payment.Ord_id) {
+		ErrorRes(res, http.StatusBadRequest,
+			"ord_id is invalid")
+		return
+	}
+
+	rows, err := AddPayment(payment)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding payment, make sure cust_id is also in database"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Payment added successfully. %d rows affected", rows),
+	})
+}
+
+// CUSTOMERS
+// TODO: ADD A SIGNUP ROUTE FOR SIGNING UP
+// TODO: ADD A LOGIN ROUTE FOR LOGGING IN
 
 // EMPLOYEES
+// TODO: ADD A SIGNUP ROUTE FOR SIGNING UP
+// TODO: ADD A LOGIN ROUTE FOR LOGGING IN
 // TODO: ADD A PUT ROUTE FOR EDITING EMPLOYEES
 // TODO: ADD A DELETE ROUTE FOR EDITING PRODUCTS
 
 // ADDRESSES
 // TODO: ADD A PUT ROUTE FOR EDITING ADDRESSES
+// TODO: ADD A PUT ROUTE TO EDIT CUSTOMER ADDRESS
 
 // PRODUCTS
 // TODO: ADD A PUT ROUTE FOR EDITING PRODUCTS

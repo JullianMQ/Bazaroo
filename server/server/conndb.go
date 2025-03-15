@@ -465,3 +465,29 @@ func AddOrder(order *OrderRequest) (int64, error) {
 	id, err := result.RowsAffected()
 	return id, err
 }
+
+func AddPayment(payment *PaymentRequest) (int64, error) {
+	result, err := db.Exec(`INSERT INTO payments (
+		cust_id,
+		payment_date,
+		amount,
+		payment_status,
+		ord_id
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5
+	)`,
+		payment.Cust_id,
+		payment.Payment_date,
+		payment.Amount,
+		payment.Payment_status,
+		payment.Ord_id)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
