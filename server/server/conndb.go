@@ -92,7 +92,7 @@ func CreateSchema() {
 		vendor_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 		vendor_name TEXT NOT NULL,
 		vendor_email TEXT NOT NULL UNIQUE,
-		vendor_phone_num TEXT,
+		vendor_phone_num TEXT NOT NULL,
 		addr_id INT NOT NULL REFERENCES addresses(addr_id)
 	)`)
 	if err != nil {
@@ -152,8 +152,11 @@ func CreateSchema() {
 
 	// order_details -> orders, products
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS order_details (
-		ord_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-		prod_id INT NOT NULL REFERENCES products(prod_id),
+		ord_id INT,
+		prod_id INT,
+		PRIMARY KEY (ord_id, prod_id),
+		CONSTRAINT ord_id_fk FOREIGN KEY (ord_id) REFERENCES orders(ord_id),
+		CONSTRAINT prod_id_fk FOREIGN KEY (prod_id) REFERENCES products(prod_id),
 		quan_ordered INT NOT NULL,
 		price_each NUMERIC(10,2) NOT NULL
 	)`)
@@ -485,6 +488,29 @@ func AddPayment(payment *PaymentRequest) (int64, error) {
 		payment.Amount,
 		payment.Payment_status,
 		payment.Ord_id)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func AddOrderDetail(orderDetail *OrderDetailRequest) (int64, error) {
+	result, err := db.Exec(`INSERT INTO order_details (
+		ord_id,
+		prod_id,
+		quan_ordered,
+		price_each
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4
+	)`,
+		orderDetail.Ord_id,
+		orderDetail.Prod_id,
+		orderDetail.Quan_ordered,
+		orderDetail.Price_each)
 	if err != nil {
 		return 0, err
 	}

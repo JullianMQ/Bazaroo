@@ -231,13 +231,35 @@ func isOrderIdInDb(order_id int) bool {
 	return false
 }
 
+func isProdIdInDb(prod_id int) bool {
+	rows, err := db.Query(`SELECT
+		prod_id
+		FROM products
+		WHERE prod_id = $1`, prod_id)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var prod_id int
+		if err := rows.Scan(&prod_id); err != nil {
+			log.Println(err)
+		}
+		if prod_id == prod_id {
+			return true
+		}
+	}
+	return false
+}
+
 type AddrRequest struct {
-	Addr_line1  string         `json:"addr_line1"`
-	Addr_line2  sql.NullString `json:"addr_line2"`
-	City        string         `json:"city"`
-	State       string         `json:"state"`
-	Postal_code string         `json:"postal_code"`
-	Country     string         `json:"country"`
+	Addr_line1  string `json:"addr_line1"`
+	Addr_line2  string `json:"addr_line2"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	Postal_code string `json:"postal_code"`
+	Country     string `json:"country"`
 }
 
 type AddrResponse struct {
@@ -761,8 +783,8 @@ func GetProductLine(res http.ResponseWriter, req *http.Request) {
 }
 
 type ProductLineRequest struct {
-	Prod_line_name string         `json:"prod_line_name"`
-	Prod_line_desc sql.NullString `json:"prod_line_desc"`
+	Prod_line_name string `json:"prod_line_name"`
+	Prod_line_desc string `json:"prod_line_desc"`
 }
 
 func PostProductLine(res http.ResponseWriter, req *http.Request) {
@@ -873,14 +895,14 @@ func GetProducts(res http.ResponseWriter, req *http.Request) {
 }
 
 type ProductRequest struct {
-	Prod_name      string         `json:"prod_name"`
-	Prod_line_name string         `json:"prod_line_name"`
-	Prod_vendor_id int            `json:"prod_vendor_id"`
-	Prod_desc      sql.NullString `json:"prod_desc"`
-	Prod_image     sql.NullString `json:"prod_image"`
-	Quan_in_stock  int            `json:"quan_in_stock"`
-	Buy_price      float64        `json:"buy_price"`
-	Msrp           float64        `json:"msrp"`
+	Prod_name      string  `json:"prod_name"`
+	Prod_line_name string  `json:"prod_line_name"`
+	Prod_vendor_id int     `json:"prod_vendor_id"`
+	Prod_desc      string  `json:"prod_desc"`
+	Prod_image     string  `json:"prod_image"`
+	Quan_in_stock  int     `json:"quan_in_stock"`
+	Buy_price      float64 `json:"buy_price"`
+	Msrp           float64 `json:"msrp"`
 }
 
 func PostProduct(res http.ResponseWriter, req *http.Request) {
@@ -1085,12 +1107,12 @@ func PostCustomer(res http.ResponseWriter, req *http.Request) {
 }
 
 type Order struct {
-	Ord_id           int       `json:"ord_id"`
-	Cust_id          int       `json:"cust_id"`
-	Ord_date         time.Time `json:"ord_date"`
-	Req_shipped_date time.Time `json:"req_shipped_date"`
-	Comments         string    `json:"comments"`
-	Rating           int       `json:"rating"`
+	Ord_id           int            `json:"ord_id"`
+	Cust_id          int            `json:"cust_id"`
+	Ord_date         time.Time      `json:"ord_date"`
+	Req_shipped_date time.Time      `json:"req_shipped_date"`
+	Comments         sql.NullString `json:"comments"`
+	Rating           int            `json:"rating"`
 }
 
 type OrderByCustId struct {
@@ -1126,7 +1148,7 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 			cust_id          int
 			ord_date         time.Time
 			req_shipped_date time.Time
-			comments         string
+			comments         sql.NullString
 			rating           int
 		)
 		if err := rows.Scan(
@@ -1415,6 +1437,122 @@ func PostPayment(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 	json.NewEncoder(res).Encode(OkResponse{
 		Message: fmt.Sprintf("Payment added successfully. %d rows affected", rows),
+	})
+}
+
+type OrderDetail struct {
+	Ord_id       int     `json:"ord_id"`
+	Prod_id      int     `json:"prod_id"`
+	Quan_ordered int     `json:"quan_ordered"`
+	Price_each   float64 `json:"price_each"`
+}
+
+func GetOrderDetailsByOrderId(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	order_id := req.URL.Query().Get("id")
+	order_id_int, err := strconv.ParseInt(order_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id, make sure that it is included in the query."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := db.Query(`SELECT
+		ord_id,
+		prod_id,
+		quan_ordered,
+		price_each
+		FROM order_details
+		WHERE ord_id = $1`, order_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not get order details, try again later")
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	var orderDetails []OrderDetail
+	for rows.Next() {
+		var (
+			ord_id       int
+			prod_id      int
+			quan_ordered int
+			price_each   float64
+		)
+		if err := rows.Scan(
+			&ord_id,
+			&prod_id,
+			&quan_ordered,
+			&price_each); err != nil {
+			log.Println(err)
+			return
+		}
+		orderDetails = append(orderDetails, OrderDetail{
+			Ord_id:       ord_id,
+			Prod_id:      prod_id,
+			Quan_ordered: quan_ordered,
+			Price_each:   price_each,
+		})
+	}
+	json.NewEncoder(res).Encode(orderDetails)
+}
+
+type OrderDetailRequest struct {
+	Ord_id       int     `json:"ord_id"`
+	Prod_id      int     `json:"prod_id"`
+	Quan_ordered int     `json:"quan_ordered"`
+	Price_each   float64 `json:"price_each"`
+}
+
+func PostOrderDetail(res http.ResponseWriter, req *http.Request) {
+	var orderDetail *OrderDetailRequest
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&orderDetail)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsZero([]any{
+		orderDetail.Prod_id,
+		orderDetail.Quan_ordered,
+		orderDetail.Price_each,
+		orderDetail.Ord_id}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"quan_ordered, price_each, ord_id cannot be zero")
+		return
+	}
+
+	if !isOrderIdInDb(orderDetail.Ord_id) {
+		ErrorRes(res, http.StatusBadRequest,
+			"ord_id is invalid")
+		return
+	}
+
+	if !isProdIdInDb(orderDetail.Prod_id) {
+		ErrorRes(res, http.StatusBadRequest,
+			"prod_id is invalid")
+		return
+	}
+
+	rows, err := AddOrderDetail(orderDetail)
+	if err != nil {
+		fmt.Println(orderDetail.Ord_id)
+		fmt.Println(orderDetail.Prod_id)
+
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding order detail, make sure ord_id and prod_id are also in database"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Order detail added successfully. %d rows affected", rows),
 	})
 }
 
