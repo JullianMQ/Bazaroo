@@ -2,6 +2,7 @@ package server
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -489,7 +490,7 @@ func AddOrder(order *OrderRequest) (int64, error) {
 		order.Cust_id,
 		order.Ord_date,
 		// Add 1 day and take out the hour, minute, second, and nanosecond
-		order.Req_shipped_date.Truncate(24 * time.Hour),
+		order.Req_shipped_date.Truncate(24*time.Hour),
 		order.Comments,
 		order.Rating)
 	if err != nil {
@@ -546,4 +547,40 @@ func AddOrderDetail(orderDetail *OrderDetailRequest) (int64, error) {
 	}
 	id, err := result.RowsAffected()
 	return id, err
+}
+
+func LogInCustomer(clog *CustomerLogIn, cust *Customer) error {
+	result, err := db.Query(`SELECT
+		cust_id,
+		cust_fname,
+		cust_lname,
+		cust_email,
+		phone_num,
+		addr_id,
+		cred_limit
+		FROM customers
+		WHERE cust_email = $1 AND cust_pass = md5($2)`,
+		clog.Email,
+		clog.Password)
+	if err != nil {
+		return err
+	}
+	defer result.Close()
+
+	if result.Next() == false {
+		return errors.New("customer not found")
+	}
+
+	if err := result.Scan(
+		&cust.Cust_id,
+		&cust.Cust_fname,
+		&cust.Cust_lname,
+		&cust.Cust_email,
+		&cust.Phone_num,
+		&cust.Addr_id,
+		&cust.Cred_limit); err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
 }

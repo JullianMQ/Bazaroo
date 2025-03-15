@@ -1552,7 +1552,6 @@ func PostOrderDetail(res http.ResponseWriter, req *http.Request) {
 }
 
 // CUSTOMERS
-// TODO: ADD A SIGNUP ROUTE FOR SIGNING UP
 type CustomerSignUp struct {
 	First_name string  `json:"first_name"`
 	Last_name  string  `json:"last_name"`
@@ -1619,12 +1618,45 @@ type CustomerLogIn struct {
 	Password string `json:"password"`
 }
 
-type CustomerLogInResponse struct {
-	Customer Customer `json:"customer"`
-	Token    string   `json:"token"`
-}
+func PostCustomerLogIn(res http.ResponseWriter, req *http.Request) {
+	var customerLogIn *CustomerLogIn
+	customer := &Customer{}
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&customerLogIn)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
 
-// TODO: ADD A LOGIN ROUTE FOR LOGGING IN
+	if ContainsEmpty([]string{
+		customerLogIn.Email,
+		customerLogIn.Password}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"email, password cannot be empty")
+		return
+	}
+
+	if !isEmailValid(customerLogIn.Email) {
+		ErrorRes(res, http.StatusBadRequest,
+			"email is invalid")
+		return
+	}
+
+	err = LogInCustomer(customerLogIn, customer)
+	if err != nil {
+		ErrorRes(res, http.StatusUnauthorized,
+			fmt.Sprintf("Incorrect email or password!"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Customer %s %s (%s) logged in successfully", customer.Cust_fname, customer.Cust_lname, customer.Cust_email),
+	})
+}
 
 // EMPLOYEES
 // TODO: ADD A SIGNUP ROUTE FOR SIGNING UP
