@@ -954,14 +954,13 @@ func PostProduct(res http.ResponseWriter, req *http.Request) {
 }
 
 type Customer struct {
-	Cust_id          int     `json:"cust_id"`
-	Cust_fname       string  `json:"cust_fname"`
-	Cust_lname       string  `json:"cust_lname"`
-	Cust_email       string  `json:"cust_email"`
-	Phone_num        string  `json:"phone_num"`
-	Addr_id          int     `json:"addr_id"`
-	Sales_rep_emp_id int     `json:"sales_rep_emp_id"`
-	Cred_limit       float64 `json:"cred_limit"`
+	Cust_id    int           `json:"cust_id"`
+	Cust_fname string        `json:"cust_fname"`
+	Cust_lname string        `json:"cust_lname"`
+	Cust_email string        `json:"cust_email"`
+	Phone_num  string        `json:"phone_num"`
+	Addr_id    sql.NullInt64 `json:"addr_id"`
+	Cred_limit float64       `json:"cred_limit"`
 }
 
 func GetCustomers(res http.ResponseWriter, req *http.Request) {
@@ -973,7 +972,6 @@ func GetCustomers(res http.ResponseWriter, req *http.Request) {
 		cust_email,
 		phone_num,
 		addr_id,
-		sales_rep_emp_id,
 		cred_limit
 		FROM customers`)
 	if err != nil {
@@ -987,14 +985,13 @@ func GetCustomers(res http.ResponseWriter, req *http.Request) {
 	var customers []Customer
 	for rows.Next() {
 		var (
-			cust_id          int
-			cust_fname       string
-			cust_lname       string
-			cust_email       string
-			phone_num        string
-			addr_id          int
-			sales_rep_emp_id int
-			cred_limit       float64
+			cust_id    int
+			cust_fname string
+			cust_lname string
+			cust_email string
+			phone_num  string
+			addr_id    sql.NullInt64
+			cred_limit float64
 		)
 		if err := rows.Scan(
 			&cust_id,
@@ -1003,20 +1000,18 @@ func GetCustomers(res http.ResponseWriter, req *http.Request) {
 			&cust_email,
 			&phone_num,
 			&addr_id,
-			&sales_rep_emp_id,
 			&cred_limit); err != nil {
 			log.Println(err)
 			return
 		}
 		customers = append(customers, Customer{
-			Cust_id:          cust_id,
-			Cust_fname:       cust_fname,
-			Cust_lname:       cust_lname,
-			Cust_email:       cust_email,
-			Phone_num:        phone_num,
-			Addr_id:          addr_id,
-			Sales_rep_emp_id: sales_rep_emp_id,
-			Cred_limit:       cred_limit,
+			Cust_id:    cust_id,
+			Cust_fname: cust_fname,
+			Cust_lname: cust_lname,
+			Cust_email: cust_email,
+			Phone_num:  phone_num,
+			Addr_id:    addr_id,
+			Cred_limit: cred_limit,
 		})
 	}
 	json.NewEncoder(res).Encode(customers)
@@ -1558,6 +1553,77 @@ func PostOrderDetail(res http.ResponseWriter, req *http.Request) {
 
 // CUSTOMERS
 // TODO: ADD A SIGNUP ROUTE FOR SIGNING UP
+type CustomerSignUp struct {
+	First_name string  `json:"first_name"`
+	Last_name  string  `json:"last_name"`
+	Email      string  `json:"email"`
+	Password   string  `json:"password"`
+	Cred_limit float64 `json:"cred_limit"`
+}
+
+func PostCustomerSignUp(res http.ResponseWriter, req *http.Request) {
+	var customerSignUp *CustomerSignUp
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&customerSignUp)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		customerSignUp.First_name,
+		customerSignUp.Last_name,
+		customerSignUp.Email,
+		customerSignUp.Password}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"first_name, last_name, email, password cannot be empty")
+		return
+	}
+
+	if len(customerSignUp.Password) < 8 {
+		ErrorRes(res, http.StatusBadRequest,
+			"password must be at least 8 characters")
+		return
+	}
+
+	if isEmailInDb(customerSignUp.Email, "customer") {
+		ErrorRes(res, http.StatusBadRequest,
+			"email is already in use")
+		return
+	}
+
+	if !isEmailValid(customerSignUp.Email) {
+		ErrorRes(res, http.StatusBadRequest,
+			"email is invalid")
+		return
+	}
+
+	rows, err := SignCustomer(customerSignUp)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding customer, try again later."))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Customer added successfully. %d rows affected", rows),
+	})
+}
+
+type CustomerLogIn struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type CustomerLogInResponse struct {
+	Customer Customer `json:"customer"`
+	Token    string   `json:"token"`
+}
+
 // TODO: ADD A LOGIN ROUTE FOR LOGGING IN
 
 // EMPLOYEES

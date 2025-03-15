@@ -66,7 +66,8 @@ func CreateSchema() {
 		emp_lname TEXT NOT NULL,
 		emp_email TEXT NOT NULL,
 		office_id INT NOT NULL REFERENCES offices(office_id),
-		job_title TEXT NOT NULL
+		job_title TEXT NOT NULL,
+		emp_pass TEXT NOT NULL
 	)`)
 	if err != nil {
 		panic(err)
@@ -79,9 +80,9 @@ func CreateSchema() {
 		cust_lname TEXT NOT NULL,
 		cust_email TEXT NOT NULL UNIQUE,
 		phone_num TEXT,
-		addr_id INT NOT NULL REFERENCES addresses(addr_id),
-		sales_rep_emp_id INT REFERENCES employees(emp_id),
-		cred_limit NUMERIC(10,2) NOT NULL
+		addr_id INT REFERENCES addresses(addr_id),
+		cred_limit NUMERIC(10,2) NOT NULL,
+		cust_pass TEXT NOT NULL
 	)`)
 	if err != nil {
 		panic(err)
@@ -434,6 +435,35 @@ func AddCustomer(customer *CustomerRequest) (int64, error) {
 		customer.Addr_id,
 		customer.Sales_rep_emp_id,
 		customer.Cred_limit)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func SignCustomer(customer *CustomerSignUp) (int64, error) {
+	result, err := db.Exec(`INSERT INTO customers (
+		cust_fname,
+		cust_lname,
+		cust_email,
+		phone_num,
+		cred_limit,
+		cust_pass
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5,
+		md5($6)
+	)`,
+		customer.First_name,
+		customer.Last_name,
+		customer.Email,
+		"",
+		20000,
+		customer.Password)
 	if err != nil {
 		return 0, err
 	}
