@@ -104,4 +104,4 @@ class SignUpSeller extends StatelessWidget {
       ),
     );
   }
-}
+} 
