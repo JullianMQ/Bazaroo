@@ -412,6 +412,24 @@ func AddProduct(product *ProductRequest) (int64, error) {
 	return id, err
 }
 
+func GetCustById(id int64) (Customer, error) {
+	var cust Customer
+	err := db.QueryRow(`SELECT
+		cust_id,
+		cust_fname,
+		cust_lname,
+		cust_email,
+		phone_num,
+		addr_id,
+		cred_limit
+		FROM customers WHERE cust_id = $1`,
+		id).Scan(&cust.Cust_id, &cust.Cust_fname, &cust.Cust_lname, &cust.Cust_email, &cust.Phone_num, &cust.Addr_id, &cust.Cred_limit)
+	if err != nil {
+		return cust, err
+	}
+	return cust, nil
+}
+
 func AddCustomer(customer *CustomerRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO customers (
 		cust_fname,
