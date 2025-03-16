@@ -95,7 +95,7 @@ func CreateSchema() {
 		vendor_name TEXT NOT NULL,
 		vendor_email TEXT NOT NULL UNIQUE,
 		vendor_phone_num TEXT NOT NULL,
-		addr_id INT NOT NULL REFERENCES addresses(addr_id)
+		addr_id INT REFERENCES addresses(addr_id)
 	)`)
 	if err != nil {
 		panic(err)
@@ -141,7 +141,8 @@ func CreateSchema() {
 		prod_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 		prod_name TEXT NOT NULL,
 		prod_line_name TEXT NOT NULL REFERENCES product_lines(prod_line_name),
-		prod_vendor_id INT NOT NULL REFERENCES vendors(vendor_id),
+		prod_vendor_id INT REFERENCES vendors(vendor_id),
+		office_id INT NOT NULL REFERENCES offices(office_id),
 		prod_desc TEXT,
 		prod_image TEXT,
 		quan_in_stock INT,
