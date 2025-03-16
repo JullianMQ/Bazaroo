@@ -263,6 +263,29 @@ func AddAddr(addr *AddrRequest) (int64, error) {
 	return rows, nil
 }
 
+func EditAddr(addr *AddrRequest, addr_id int64) (int64, error) {
+	result, err := db.Exec(`UPDATE addresses SET
+		addr_line1 = $1,
+		addr_line2 = $2,
+		city = $3,
+		state = $4,
+		postal_code = $5,
+		country = $6
+		WHERE addr_id = $7`,
+		addr.Addr_line1,
+		addr.Addr_line2,
+		addr.City,
+		addr.State,
+		addr.Postal_code,
+		strings.ToUpper(addr.Country),
+		addr_id)
+	if err != nil {
+		return 0, err
+	}
+	rows, err := result.RowsAffected()
+	return rows, err
+}
+
 func DeleteAddrById(addr_id int64) (int64, error) {
 	result, err := db.Exec(`DELETE FROM addresses WHERE addr_id = $1`, addr_id)
 	if err != nil {
