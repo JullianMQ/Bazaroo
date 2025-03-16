@@ -8,6 +8,9 @@ import 'nav/bottom_nav.dart';
 import 'main.dart';
 import 'logincustomer.dart';
 
+import 'buyerProfile.dart';
+
+
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -92,7 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            ListTile(title: Text('My Account')),
+            ListTile(title: Text('My Account'), onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => BuyerProfile()));
+            }),
+            
             ListTile(title: Text('Purchase History'), onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => PurchaseHistory()));
             }),
