@@ -161,7 +161,7 @@
 					"response": []
 				},
 				{
-					"name": "localhost:3000/v1/emps",
+					"name": "GET BY ID",
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -190,7 +190,7 @@
 					"response": []
 				},
 				{
-					"name": "localhost:3000/v1/emps",
+					"name": "ADD NEW EMP",
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -215,6 +215,70 @@
 							"path": [
 								"v1",
 								"emps"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SIGNUP",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"first_name\": \"Lee\",\n    \"last_name\": \"Sin\",\n    \"email\": \"leesin@example.com\",\n    \"password\": \"password\",\n    \"job_title\": \"Owner\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/emps/signup",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"emps",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LOGIN",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"johndoe@example.com\",\n    \"password\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/emps/login",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"emps",
+								"login"
 							]
 						}
 					},
@@ -342,7 +406,7 @@
 			"name": "Customers",
 			"item": [
 				{
-					"name": "localhost:3000/v1/customers",
+					"name": "GET ALL",
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -364,7 +428,7 @@
 					"response": []
 				},
 				{
-					"name": "localhost:3000/v1/customers",
+					"name": "ADD NEW CUSTOMER THROUGH API",
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -373,7 +437,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"cust_fname\": \"John\",\n    \"cust_lname\": \"Doe\",\n    \"cust_email\": \"johndoe@email.com\",\n    \"phone_num\": \"09123456789\",\n    \"addr_id\": 2,\n    \"sales_rep_emp_id\": 8,\n    \"cred_limit\": 20000\n}",
+							"raw": "{\n    \"cust_fname\": \"John\",\n    \"cust_lname\": \"Doe\",\n    \"cust_email\": \"johndoe@email.com\",\n    \"phone_num\": \"09123456789\",\n    \"addr_id\": 2,\n    \"cred_limit\": 20000\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -389,6 +453,35 @@
 							"path": [
 								"v1",
 								"customers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Signup",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"leesin@email.com\",\n    \"password\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/customers/login",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"customers",
+								"login"
 							]
 						}
 					},
@@ -512,6 +605,159 @@
 							"path": [
 								"v1",
 								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "localhost:3000/v1/orders",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/v1/orders",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"orders"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "OrderDetails",
+			"item": [
+				{
+					"name": "localhost:3000/v1/orderdetails",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ord_id\": 2,\n    \"prod_id\": 2,\n    \"quan_ordered\": 2,\n    \"price_each\": 300\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/orderdetails",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"orderdetails"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "localhost:3000/v1/orderdetails/?id=2",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/v1/orderdetails/?id=2",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"orderdetails",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "localhost:3000/v1/payments/",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cust_id\": 1,\n    \"payment_date\": \"2025-03-15T14:30:00Z\",\n    \"amount\": 200,\n    \"payment_status\": \"paid\",\n    \"ord_id\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/payments/",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"payments",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "localhost:3000/v1/payments/?id=1",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/v1/payments/?id=1",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"payments",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
 							]
 						}
 					},
