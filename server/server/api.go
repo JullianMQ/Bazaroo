@@ -324,6 +324,38 @@ func GetAddr(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(addr)
 }
 
+func DeleteAddr(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	addr_id := req.URL.Query().Get("id")
+	addr_id_int, err := strconv.ParseInt(addr_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := DeleteAddrById(addr_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not delete address, try again later."))
+		log.Println(err)
+		return
+	}
+
+	if rows == 0 {
+		json.NewEncoder(res).Encode(OkResponse{
+			Message: "Address not found",
+		})
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Address deleted successfully. %d rows affected", rows),
+	})
+}
+
 func PostAddr(res http.ResponseWriter, req *http.Request) {
 	var addr *AddrRequest
 	res.Header().Set("Content-Type", "application/json")

@@ -263,6 +263,15 @@ func AddAddr(addr *AddrRequest) (int64, error) {
 	return rows, nil
 }
 
+func DeleteAddrById(addr_id int64) (int64, error) {
+	result, err := db.Exec(`DELETE FROM addresses WHERE addr_id = $1`, addr_id)
+	if err != nil {
+		return 0, err
+	}
+	rows, err := result.RowsAffected()
+	return rows, err
+}
+
 func AddOffice(office *OfficeRequest) (int64, error) {
 	res, err := db.Exec(`INSERT INTO offices(
 			phone_num,
