@@ -2,6 +2,7 @@ package server
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -66,7 +67,8 @@ func CreateSchema() {
 		emp_lname TEXT NOT NULL,
 		emp_email TEXT NOT NULL,
 		office_id INT NOT NULL REFERENCES offices(office_id),
-		job_title TEXT NOT NULL
+		job_title TEXT NOT NULL,
+		emp_pass TEXT NOT NULL
 	)`)
 	if err != nil {
 		panic(err)
@@ -79,9 +81,9 @@ func CreateSchema() {
 		cust_lname TEXT NOT NULL,
 		cust_email TEXT NOT NULL UNIQUE,
 		phone_num TEXT,
-		addr_id INT NOT NULL REFERENCES addresses(addr_id),
-		sales_rep_emp_id INT REFERENCES employees(emp_id),
-		cred_limit NUMERIC(10,2) NOT NULL
+		addr_id INT REFERENCES addresses(addr_id),
+		cred_limit NUMERIC(10,2) NOT NULL,
+		cust_pass TEXT NOT NULL
 	)`)
 	if err != nil {
 		panic(err)
@@ -92,7 +94,7 @@ func CreateSchema() {
 		vendor_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 		vendor_name TEXT NOT NULL,
 		vendor_email TEXT NOT NULL UNIQUE,
-		vendor_phone_num TEXT,
+		vendor_phone_num TEXT NOT NULL,
 		addr_id INT NOT NULL REFERENCES addresses(addr_id)
 	)`)
 	if err != nil {
@@ -152,8 +154,11 @@ func CreateSchema() {
 
 	// order_details -> orders, products
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS order_details (
-		ord_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-		prod_id INT NOT NULL REFERENCES products(prod_id),
+		ord_id INT,
+		prod_id INT,
+		PRIMARY KEY (ord_id, prod_id),
+		CONSTRAINT ord_id_fk FOREIGN KEY (ord_id) REFERENCES orders(ord_id),
+		CONSTRAINT prod_id_fk FOREIGN KEY (prod_id) REFERENCES products(prod_id),
 		quan_ordered INT NOT NULL,
 		price_each NUMERIC(10,2) NOT NULL
 	)`)
@@ -438,6 +443,35 @@ func AddCustomer(customer *CustomerRequest) (int64, error) {
 	return id, err
 }
 
+func SignCustomer(customer *CustomerSignUp) (int64, error) {
+	result, err := db.Exec(`INSERT INTO customers (
+		cust_fname,
+		cust_lname,
+		cust_email,
+		phone_num,
+		cred_limit,
+		cust_pass
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5,
+		md5($6)
+	)`,
+		customer.First_name,
+		customer.Last_name,
+		customer.Email,
+		"",
+		20000,
+		customer.Password)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
 func AddOrder(order *OrderRequest) (int64, error) {
 	var err error
 	result, err := db.Exec(`INSERT INTO orders (
@@ -456,7 +490,7 @@ func AddOrder(order *OrderRequest) (int64, error) {
 		order.Cust_id,
 		order.Ord_date,
 		// Add 1 day and take out the hour, minute, second, and nanosecond
-		order.Req_shipped_date.Truncate(24 * time.Hour),
+		order.Req_shipped_date.Truncate(24*time.Hour),
 		order.Comments,
 		order.Rating)
 	if err != nil {
@@ -464,4 +498,89 @@ func AddOrder(order *OrderRequest) (int64, error) {
 	}
 	id, err := result.RowsAffected()
 	return id, err
+}
+
+func AddPayment(payment *PaymentRequest) (int64, error) {
+	result, err := db.Exec(`INSERT INTO payments (
+		cust_id,
+		payment_date,
+		amount,
+		payment_status,
+		ord_id
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		$5
+	)`,
+		payment.Cust_id,
+		payment.Payment_date,
+		payment.Amount,
+		payment.Payment_status,
+		payment.Ord_id)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func AddOrderDetail(orderDetail *OrderDetailRequest) (int64, error) {
+	result, err := db.Exec(`INSERT INTO order_details (
+		ord_id,
+		prod_id,
+		quan_ordered,
+		price_each
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4
+	)`,
+		orderDetail.Ord_id,
+		orderDetail.Prod_id,
+		orderDetail.Quan_ordered,
+		orderDetail.Price_each)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func LogInCustomer(clog *CustomerLogIn, cust *Customer) error {
+	result, err := db.Query(`SELECT
+		cust_id,
+		cust_fname,
+		cust_lname,
+		cust_email,
+		phone_num,
+		addr_id,
+		cred_limit
+		FROM customers
+		WHERE cust_email = $1 AND cust_pass = md5($2)`,
+		clog.Email,
+		clog.Password)
+	if err != nil {
+		return err
+	}
+	defer result.Close()
+
+	if result.Next() == false {
+		return errors.New("customer not found")
+	}
+
+	if err := result.Scan(
+		&cust.Cust_id,
+		&cust.Cust_fname,
+		&cust.Cust_lname,
+		&cust.Cust_email,
+		&cust.Phone_num,
+		&cust.Addr_id,
+		&cust.Cred_limit); err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
 }
