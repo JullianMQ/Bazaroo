@@ -6,6 +6,7 @@ import 'payment.dart';
 import 'history.dart';
 import 'nav/bottom_nav.dart';  
 import 'main.dart';
+import 'logincustomer.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -103,8 +104,12 @@ class _HomeScreenState extends State<HomeScreen> {
             }),
             ListTile(title: Text('Change Password')),
             ListTile(title: Text('Settings')),
-            ListTile(title: Text('Log out')),
-          ],
+            ListTile(title: Text('Log out'),  onTap: () {
+              Navigator.pushReplacement(context,MaterialPageRoute(builder: (context) => LoginCustomer()),
+    );
+  },
+),
+            ],
         ),
       ),
       body: SingleChildScrollView(

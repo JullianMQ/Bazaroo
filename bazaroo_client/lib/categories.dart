@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'nav/bottom_nav.dart';
-import 'main.dart';
 
 class Categories extends StatelessWidget {
   @override
