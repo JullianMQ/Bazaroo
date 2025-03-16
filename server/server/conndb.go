@@ -462,6 +462,19 @@ func AddCustomer(customer *CustomerRequest) (int64, error) {
 	return id, err
 }
 
+func AddCustAddr(cust_id int64, addr_id int) (int64, error) {
+	result, err := db.Exec(`UPDATE customers SET 
+		addr_id = $2
+		WHERE cust_id = $1`,
+		cust_id,
+		addr_id)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
 func SignCustomer(customer *CustomerSignUp) (int64, error) {
 	result, err := db.Exec(`INSERT INTO customers (
 		cust_fname,

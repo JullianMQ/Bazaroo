@@ -1688,6 +1688,57 @@ func PostCustomerLogIn(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
+type CustAddr struct {
+	Addr_id int `json:"addr_id"`
+}
+
+func PutCustAddr(res http.ResponseWriter, req *http.Request) {
+	var addCustAddr *CustAddr
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&addCustAddr)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsZero([]int{
+		addCustAddr.Addr_id}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"addr_id is required")
+		return
+	}
+
+	if !isAddrIdInDb(addCustAddr.Addr_id) {
+		ErrorRes(res, http.StatusBadRequest,
+			"addr_id is invalid")
+		return
+	}
+
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id, try again later."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := AddCustAddr(cust_id_int, addCustAddr.Addr_id)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding customer address, make sure addr_id is also in database"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Customer address added successfully. %d rows affected", rows),
+	})
+}
+
 // EMPLOYEES
 type EmployeeSignUp struct {
 	First_name string `json:"first_name"`
@@ -1790,12 +1841,16 @@ func PostEmpLogin(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
+// EMPLOYEES
 // TODO: ADD A PUT ROUTE FOR EDITING EMPLOYEES
 // TODO: ADD A DELETE ROUTE FOR EDITING PRODUCTS
 
+// CUSTOMERS
+// TODO: ADD A PUT ROUTE TO EDIT CUSTOMER ADDRESS
+
 // ADDRESSES
 // TODO: ADD A PUT ROUTE FOR EDITING ADDRESSES
-// TODO: ADD A PUT ROUTE TO EDIT CUSTOMER ADDRESS
+// TODO: ADD A DELETE ROUTE
 
 // PRODUCTS
 // TODO: ADD A PUT ROUTE FOR EDITING PRODUCTS
