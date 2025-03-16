@@ -5,9 +5,9 @@ class SellerProfile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
-        leading: Icon(Icons.person_outline),
-        backgroundColor: Colors.red,  // Updated to red
+        title: Text('Profile', style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.white,
+        leading: Icon(Icons.person_outline, color: Colors.red),
         elevation: 0,
       ),
       body: Padding(
@@ -17,10 +17,7 @@ class SellerProfile extends StatelessWidget {
           children: [
             Text(
               'ID: *********',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
             TextField(
@@ -58,6 +55,7 @@ class SellerProfile extends StatelessWidget {
             TextField(
               decoration: InputDecoration(
                 labelText: 'Address Line 1',
+                hintText: 'Street Address',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -65,20 +63,19 @@ class SellerProfile extends StatelessWidget {
             TextField(
               decoration: InputDecoration(
                 labelText: 'Address Line 2',
+                hintText: 'City, State',
                 border: OutlineInputBorder(),
               ),
             ),
             SizedBox(height: 24),
             Center(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Add save functionality here
+                },
+                child: Text('Save'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,  // Updated to red
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                ),
-                child: Text(
-                  'Save',
-                  style: TextStyle(color: Colors.white),
+                  foregroundColor: Colors.white, backgroundColor: Colors.red, // White text
                 ),
               ),
             ),
@@ -89,15 +86,15 @@ class SellerProfile extends StatelessWidget {
         currentIndex: 0,
         items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home, color: Colors.red),  // Updated to red
+            icon: Icon(Icons.home, color: Colors.red),
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications, color: Colors.red),  // Updated to red
+            icon: Icon(Icons.notifications, color: Colors.red),
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.mail_outline, color: Colors.red),  // Updated to red
+            icon: Icon(Icons.mail_outline, color: Colors.red),
             label: '',
           ),
         ],

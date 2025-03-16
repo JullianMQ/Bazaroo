@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class AddProductPage extends StatelessWidget {
+class AddProduct extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add New Product'),
-        backgroundColor: Colors.orange,
+        title: Text('Add New Product', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red, // Red background for the AppBar
         elevation: 0,
       ),
       body: Padding(
@@ -15,11 +15,13 @@ class AddProductPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                // Add image functionality here
+              },
+              child: Text('Add Image'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white, backgroundColor: Colors.red, // White text
               ),
-              child: Text('Add Image', style: TextStyle(color: Colors.white)),
             ),
             SizedBox(height: 16),
             DropdownButtonFormField<String>(
@@ -27,12 +29,15 @@ class AddProductPage extends StatelessWidget {
                 labelText: 'Category',
                 border: OutlineInputBorder(),
               ),
-              items: [
-                DropdownMenuItem(child: Text('Category 1'), value: 'Category 1'),
-                DropdownMenuItem(child: Text('Category 2'), value: 'Category 2'),
-                DropdownMenuItem(child: Text('Category 3'), value: 'Category 3'),
-              ],
-              onChanged: (value) {},
+              items: ['Category 1', 'Category 2', 'Category 3']
+                  .map((category) => DropdownMenuItem(
+                        value: category,
+                        child: Text(category),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                // Handle category change
+              },
             ),
             SizedBox(height: 16),
             TextField(
@@ -65,30 +70,31 @@ class AddProductPage extends StatelessWidget {
             SizedBox(height: 24),
             Center(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Add product functionality here
+                },
+                child: Text('Add Product'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  foregroundColor: Colors.white, backgroundColor: Colors.red, // White text for button
                 ),
-                child: Text('Add Product', style: TextStyle(color: Colors.white)),
               ),
             ),
           ],
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
+        currentIndex: 0,
         items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home, color: Colors.orange),
+            icon: Icon(Icons.home, color: Colors.red),
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications, color: Colors.orange),
+            icon: Icon(Icons.notifications, color: Colors.red),
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.mail_outline, color: Colors.orange),
+            icon: Icon(Icons.mail_outline, color: Colors.red),
             label: '',
           ),
         ],
