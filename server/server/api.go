@@ -1017,6 +1017,42 @@ func GetCustomers(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(customers)
 }
 
+type CustomerAcc struct {
+	Cust_id    int           `json:"cust_id"`
+	Cust_fname string        `json:"cust_fname"`
+	Cust_lname string        `json:"cust_lname"`
+	Cust_email string        `json:"cust_email"`
+	Phone_num  string        `json:"phone_num"`
+}
+
+func GetCustomerById(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id, try again later."))
+		log.Println(err)
+		return
+	}
+
+	cust, err := GetCustById(cust_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not get customer by id, check if id is correct."))
+		log.Println(err)
+		return
+	}
+
+	json.NewEncoder(res).Encode(CustomerAcc{
+		Cust_id:    cust.Cust_id,
+		Cust_fname: cust.Cust_fname,
+		Cust_lname: cust.Cust_lname,
+		Cust_email: cust.Cust_email,
+		Phone_num:  cust.Phone_num,
+	})
+}
+
 type CustomerRequest struct {
 	Cust_fname       string  `json:"cust_fname"`
 	Cust_lname       string  `json:"cust_lname"`

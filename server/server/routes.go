@@ -46,6 +46,7 @@ func ServeHttp() {
 	mux.HandleFunc("POST /v1/products", PostProduct)
 
 	mux.HandleFunc("GET /v1/customers", GetCustomers)
+	mux.HandleFunc("GET /v1/customers/", GetCustomerById)
 	mux.HandleFunc("POST /v1/customers", PostCustomer)
 	mux.HandleFunc("POST /v1/customers/signup", PostCustomerSignUp)
 	mux.HandleFunc("POST /v1/customers/login", PostCustomerLogIn)
