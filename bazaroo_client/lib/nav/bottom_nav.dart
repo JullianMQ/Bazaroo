@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../main.dart';
+import '../index.dart';
 
 class BottomNavBar extends StatelessWidget {
 
@@ -16,7 +16,7 @@ class BottomNavBar extends StatelessWidget {
           icon: GestureDetector(
             onTap: () {
               Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => MyApp()),
+                MaterialPageRoute(builder: (context) => HomeScreen()),
               );
             },
             child: Icon(Icons.home, size: 30,),

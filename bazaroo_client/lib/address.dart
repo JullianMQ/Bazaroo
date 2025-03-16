@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'newAddress.dart';
-import 'main.dart';
+import 'index.dart';
 
 class AddressScreen extends StatelessWidget {
   @override
@@ -27,7 +27,7 @@ class AddressScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => MyApp()),
+                  MaterialPageRoute(builder: (context) => HomeScreen()),
                 );
               },
             ),

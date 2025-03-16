@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'nav/bottom_nav.dart';  
-import 'main.dart';
+import 'index.dart';
 
 class PurchaseHistory extends StatelessWidget {
   @override
@@ -26,7 +26,7 @@ class PurchaseHistory extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => MyApp()),
+                  MaterialPageRoute(builder: (context) => HomeScreen()),
                 );
               },
             ),

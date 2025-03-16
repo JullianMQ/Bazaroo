@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'main.dart';
+import 'index.dart';
 
 class PaymentOptions extends StatelessWidget {
   @override
@@ -26,7 +26,7 @@ class PaymentOptions extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => MyApp()),
+                  MaterialPageRoute(builder: (context) => HomeScreen()),
                 );
               },
             ),
