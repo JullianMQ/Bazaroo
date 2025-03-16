@@ -1703,17 +1703,12 @@ func PutCustAddr(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if ContainsZero([]int{
-		addCustAddr.Addr_id}) {
-		ErrorRes(res, http.StatusBadRequest,
-			"addr_id is required")
-		return
-	}
-
-	if !isAddrIdInDb(addCustAddr.Addr_id) {
-		ErrorRes(res, http.StatusBadRequest,
-			"addr_id is invalid")
-		return
+	if addCustAddr.Addr_id != 0 {
+		if !isAddrIdInDb(addCustAddr.Addr_id) {
+			ErrorRes(res, http.StatusBadRequest,
+				"addr_id is invalid")
+			return
+		}
 	}
 
 	cust_id := req.URL.Query().Get("id")
