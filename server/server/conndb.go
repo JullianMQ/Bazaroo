@@ -463,7 +463,19 @@ func AddCustomer(customer *CustomerRequest) (int64, error) {
 }
 
 func AddCustAddr(cust_id int64, addr_id int) (int64, error) {
-	result, err := db.Exec(`UPDATE customers SET 
+	var result sql.Result
+	var err error
+
+	if addr_id == 0 {
+		result, err = db.Exec(`UPDATE customers SET
+			addr_id = $2
+			WHERE cust_id = $1`,
+			cust_id,
+			nil)
+		return 0, err
+	}
+
+	result, err = db.Exec(`UPDATE customers SET 
 		addr_id = $2
 		WHERE cust_id = $1`,
 		cust_id,
