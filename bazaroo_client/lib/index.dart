@@ -4,10 +4,9 @@ import 'categories.dart';
 import 'address.dart';
 import 'payment.dart';
 import 'history.dart';
-import 'nav/bottom_nav.dart';  
+import 'nav/customer_nav.dart';  
 import 'main.dart';
 import 'logincustomer.dart';
-
 import 'buyerProfile.dart';
 
 
@@ -32,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => MyApp()),  
+                  MaterialPageRoute(builder: (context) => HomeScreen()),  
                 );
               },
               child: Padding(
@@ -163,7 +162,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       margin: EdgeInsets.only(bottom: 10),
                       child: GestureDetector(
                         onTap: () {
-                          // Navigate to Categories screen
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => Categories()),

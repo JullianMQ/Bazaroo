@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'nav/customer_nav.dart'; 
 
 class BuyerProfile extends StatelessWidget {
   @override
@@ -80,23 +81,7 @@ class BuyerProfile extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: Colors.red,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.mail),
-            label: 'Messages',
-          ),
-        ],
+      bottomNavigationBar: BottomNavBar(
       ),
     );
   }

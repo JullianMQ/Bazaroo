@@ -1,5 +1,6 @@
+import 'package:bazaroo_client/startupscreen.dart';
 import 'package:flutter/material.dart';
-import 'nav/bottom_nav.dart';
+import 'nav/seller_nav.dart';
 
 class SellerHome extends StatelessWidget {
   @override
@@ -18,15 +19,42 @@ class SellerHome extends StatelessWidget {
         ),
         automaticallyImplyLeading: false,
         actions: [
-          Container(
-            margin: EdgeInsets.symmetric(horizontal: 25.0, ),
-            child: IconButton(
-              icon: Icon(Icons.chevron_left, color: Colors.white, size: 35,),
-              onPressed: () {
-                Navigator.pop(context);
-              },
+          GestureDetector(
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => StartupScreen()), // Redirect to StartupScreen after logout
+              );
+            },
+            child: Row(
+              children: [
+                Padding(
+  padding: EdgeInsets.symmetric(horizontal: 20.0), // Adjust padding as needed
+  child: GestureDetector(
+    onTap: () {
+      // Add your logout functionality here
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => StartupScreen()), // Redirect to StartupScreen after logout
+      );
+    },
+    child: Row(
+      children: [
+        Icon(Icons.logout, color: Colors.white, size: 30),
+        SizedBox(width: 8),
+        Text(
+          'Logout',
+          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ],
+    ),
+  ),
+)
+
+              ],
             ),
-          ),
+          )
+
         ],
       ),
       body: Center(

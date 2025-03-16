@@ -1,3 +1,4 @@
+import 'package:bazaroo_client/index.dart';
 import 'package:bazaroo_client/logincustomer.dart';
 import 'package:flutter/material.dart';
 
@@ -65,13 +66,32 @@ class SignUpCustomer extends StatelessWidget {
                 ),
               ),
             ),
+            SizedBox(height: 20),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginCustomer()),
+                );
+              },
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: 'Already have an account? '),
+                    TextSpan(
+                      text: 'Log In',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
-                // Navigate to HomeScreen after sign-up
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginCustomer()),
+                  MaterialPageRoute(builder: (context) => HomeScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(

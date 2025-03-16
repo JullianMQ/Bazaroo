@@ -75,10 +75,29 @@ class SignUpSeller extends StatelessWidget {
                 ),
               ),
             ),
+            SizedBox(height: 20),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginSeller()),
+                );
+              },
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: 'Already have an account? '),
+                    TextSpan(
+                      text: 'Log In',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
-                
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => LoginSeller()),
@@ -92,7 +111,7 @@ class SignUpSeller extends StatelessWidget {
                 backgroundColor: Colors.red,
               ),
               child: Text(
-                'Register',
+                'Sign Up',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white,

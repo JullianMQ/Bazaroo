@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'nav/bottom_nav.dart';
+import 'nav/customer_nav.dart';
 
 class Categories extends StatelessWidget {
   @override

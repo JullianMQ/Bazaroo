@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'nav/bottom_nav.dart';  
+import 'nav/customer_nav.dart'; 
 import 'index.dart';
 
 class PurchaseHistory extends StatelessWidget {

@@ -1,32 +1,97 @@
+import 'package:bazaroo_client/startupscreen.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'signupseller.dart';
-import 'registerbusiness.dart';
+import 'sellerhomepage.dart';
 
-class LoginSeller extends StatelessWidget {
+class LoginSeller extends StatefulWidget {
+  @override
+  _LoginSellerState createState() => _LoginSellerState();
+}
+
+class _LoginSellerState extends State<LoginSeller> {
+  String responseMessage = "";
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  Future<void> sendPostRequest() async {
+    final url = Uri.parse("https://bazaroo.onrender.com/v1/emps/login");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": emailController.text.trim(),
+          "password": passwordController.text.trim(),
+        }),
+      );
+
+      final responseData = jsonDecode(response.body);
+      setState(() {
+        if (response.statusCode == 200) {
+          responseMessage = responseData["message"];
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => SellerHome()),
+          );
+        } else if (response.statusCode == 400) {
+          responseMessage = "Enter your Email and Password!";
+        } else if (response.statusCode == 401) {
+          responseMessage = responseData["error"] ?? "Invalid Credentials!";
+        } else {
+          responseMessage = "Unexpected Error: ${response.statusCode}";
+        }
+      });
+    } catch (e) {
+      setState(() {
+        responseMessage = "Error: Unable to connect to server. Server is offline";
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'Login',
-          style: TextStyle(color: Colors.red, fontSize: 25),
+        toolbarHeight: 80,
+        title: Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.chevron_left, color: Colors.red, size: 35),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => StartupScreen()),
+                );
+              },
+            ),
+            Text(
+              'Login',
+              style: TextStyle(color: Colors.red, fontSize: 40),
+            ),
+          ],
         ),
-        centerTitle: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/Bazaroo-full-logo-red.png',
-              height: 350,
-            ),
-            SizedBox(height: 40),
+            Image.asset('assets/Bazaroo-full-logo-red.png', height: 350),
+            SizedBox(height: 20),
+            if (responseMessage.isNotEmpty) 
+              Text(
+                responseMessage,
+                style: TextStyle(color: Colors.red, fontSize: 16),
+              ),
+            SizedBox(height: 10),
             TextField(
+              controller: emailController,
               decoration: InputDecoration(
                 labelText: 'Email',
                 prefixIcon: Icon(Icons.email),
@@ -37,6 +102,7 @@ class LoginSeller extends StatelessWidget {
             ),
             SizedBox(height: 20),
             TextField(
+              controller: passwordController,
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Password',
@@ -49,26 +115,26 @@ class LoginSeller extends StatelessWidget {
             SizedBox(height: 20),
             GestureDetector(
               onTap: () {
-                // Navigate to the Sign Up screen
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => SignUpSeller()),
                 );
               },
-              child: Text(
-                'Don\'t have an account yet? Sign Up',
-                style: TextStyle(color: Colors.red),
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: 'Don\'t have an account yet? '),
+                    TextSpan(
+                      text: 'Sign Up',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                    ),
+                  ],
+                ),
               ),
             ),
             SizedBox(height: 30),
             ElevatedButton(
-              onPressed: () {
-                // Navigate to HomeScreen after login
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => RegisterBusiness()),
-                );
-              },
+              onPressed: sendPostRequest,
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -78,10 +144,7 @@ class LoginSeller extends StatelessWidget {
               ),
               child: Text(
                 'Login',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.white),
               ),
             ),
           ],
