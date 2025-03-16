@@ -465,12 +465,12 @@ func PostOffice(res http.ResponseWriter, req *http.Request) {
 }
 
 type Employee struct {
-	Emp_id    int    `json:"emp_id"`
-	Emp_fname string `json:"emp_fname"`
-	Emp_lname string `json:"emp_lname"`
-	Emp_email string `json:"emp_email"`
-	Office_id int    `json:"office_id"`
-	Job_title string `json:"job_title"`
+	Emp_id    int           `json:"emp_id"`
+	Emp_fname string        `json:"emp_fname"`
+	Emp_lname string        `json:"emp_lname"`
+	Emp_email string        `json:"emp_email"`
+	Office_id sql.NullInt64 `json:"office_id"`
+	Job_title string        `json:"job_title"`
 }
 
 func GetEmps(res http.ResponseWriter, req *http.Request) {
@@ -495,7 +495,7 @@ func GetEmps(res http.ResponseWriter, req *http.Request) {
 			emp_fname string
 			emp_lname string
 			emp_email string
-			office_id int
+			office_id sql.NullInt64
 			job_title string
 		)
 		if err := rows.Scan(
@@ -1638,12 +1638,6 @@ func PostCustomerLogIn(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if !isEmailValid(customerLogIn.Email) {
-		ErrorRes(res, http.StatusBadRequest,
-			"email is invalid")
-		return
-	}
-
 	err = LogInCustomer(customerLogIn, customer)
 	if err != nil {
 		ErrorRes(res, http.StatusUnauthorized,
@@ -1659,8 +1653,107 @@ func PostCustomerLogIn(res http.ResponseWriter, req *http.Request) {
 }
 
 // EMPLOYEES
-// TODO: ADD A SIGNUP ROUTE FOR SIGNING UP
-// TODO: ADD A LOGIN ROUTE FOR LOGGING IN
+type EmployeeSignUp struct {
+	First_name string `json:"first_name"`
+	Last_name  string `json:"last_name"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Job_title  string `json:"job_title"`
+}
+
+func PostEmployeeSignUp(res http.ResponseWriter, req *http.Request) {
+	var employeeSignUp *EmployeeSignUp
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&employeeSignUp)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		employeeSignUp.First_name,
+		employeeSignUp.Last_name,
+		employeeSignUp.Email,
+		employeeSignUp.Password,
+		employeeSignUp.Job_title}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"first_name, last_name, email, password, job_title cannot be empty")
+		return
+	}
+
+	if len(employeeSignUp.Password) < 8 {
+		ErrorRes(res, http.StatusBadRequest,
+			"password must be at least 8 characters")
+		return
+	}
+
+	if isEmailInDb(employeeSignUp.Email, "employee") {
+		ErrorRes(res, http.StatusBadRequest,
+			"email is already in use")
+		return
+	}
+
+	if !isEmailValid(employeeSignUp.Email) {
+		ErrorRes(res, http.StatusBadRequest,
+			"email is invalid")
+		return
+	}
+
+	rows, err := SignEmployee(employeeSignUp)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding employee, try again later."))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Employee added successfully. %d rows affected", rows),
+	})
+}
+
+type EmployeeLogin struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func PostEmpLogin(res http.ResponseWriter, req *http.Request) {
+	var employeeLogin *EmployeeLogin
+	employee := &Employee{}
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&employeeLogin)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		employeeLogin.Email,
+		employeeLogin.Password}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"email, password cannot be empty")
+		return
+	}
+
+	err = LogInEmployee(employeeLogin, employee)
+	if err != nil {
+		ErrorRes(res, http.StatusUnauthorized,
+			fmt.Sprintf("Incorrect email or password!"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Employee %s %s (%s) logged in successfully", employee.Emp_fname, employee.Emp_lname, employee.Emp_email),
+	})
+}
+
 // TODO: ADD A PUT ROUTE FOR EDITING EMPLOYEES
 // TODO: ADD A DELETE ROUTE FOR EDITING PRODUCTS
 

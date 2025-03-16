@@ -66,7 +66,7 @@ func CreateSchema() {
 		emp_fname TEXT NOT NULL,
 		emp_lname TEXT NOT NULL,
 		emp_email TEXT NOT NULL,
-		office_id INT NOT NULL REFERENCES offices(office_id),
+		office_id INT REFERENCES offices(office_id),
 		job_title TEXT NOT NULL,
 		emp_pass TEXT NOT NULL
 	)`)
@@ -579,6 +579,66 @@ func LogInCustomer(clog *CustomerLogIn, cust *Customer) error {
 		&cust.Phone_num,
 		&cust.Addr_id,
 		&cust.Cred_limit); err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func SignEmployee(employee *EmployeeSignUp) (int64, error) {
+	result, err := db.Exec(`INSERT INTO employees (
+		emp_fname,
+		emp_lname,
+		emp_email,
+		job_title,
+		emp_pass
+	) VALUES (
+		$1,
+		$2,
+		$3,
+		$4,
+		md5($5)
+	)`,
+		employee.First_name,
+		employee.Last_name,
+		employee.Email,
+		employee.Job_title,
+		employee.Password)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func LogInEmployee(clog *EmployeeLogin, emp *Employee) error {
+	result, err := db.Query(`SELECT
+		emp_id,
+		emp_fname,
+		emp_lname,
+		emp_email,
+		job_title,
+		office_id
+		FROM employees
+		WHERE emp_email = $1 AND emp_pass = md5($2)`,
+		clog.Email,
+		clog.Password)
+	if err != nil {
+		return err
+	}
+	defer result.Close()
+
+	if result.Next() == false {
+		return errors.New("employee not found")
+	}
+
+	if err := result.Scan(
+		&emp.Emp_id,
+		&emp.Emp_fname,
+		&emp.Emp_lname,
+		&emp.Emp_email,
+		&emp.Job_title,
+		&emp.Office_id); err != nil {
 		log.Println(err)
 		return err
 	}
