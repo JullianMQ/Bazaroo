@@ -404,6 +404,64 @@ func PostAddr(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
+func PutAddr(res http.ResponseWriter, req *http.Request) {
+	var addr *AddrRequest
+	var addr_id string
+	addr_id = req.URL.Query().Get("id")
+	addr_id_int, err := strconv.ParseInt(addr_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	err = json.NewDecoder(req.Body).Decode(&addr)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		addr.Addr_line1,
+		addr.City,
+		addr.State,
+		addr.Postal_code,
+		addr.Country}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"addr_line1, city, state, postal_code, country cannot be empty")
+		return
+	}
+
+	if len(addr.Postal_code) > 10 {
+		ErrorRes(res, http.StatusBadRequest,
+			"postal_code must be 10 characters or less")
+		return
+	}
+
+	if len(addr.Country) != 3 {
+		ErrorRes(res, http.StatusBadRequest,
+			"country must be 3 characters, of iso 3166-1 alpha-3 code")
+		return
+	}
+
+	rows, err := EditAddr(addr, addr_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error editing address, make sure addr_id is also in database"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Address edited successfully. %d rows affected", rows),
+	})
+}
+
 type Office struct {
 	Office_id int    `json:"office_id"`
 	Phone_num string `json:"phone_num"`

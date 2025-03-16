@@ -25,6 +25,7 @@ func ServeHttp() {
 
 	mux.HandleFunc("GET /v1/addr", GetAddr)
 	mux.HandleFunc("POST /v1/addr", PostAddr)
+	mux.HandleFunc("PUT /v1/addr/", PutAddr)
 	mux.HandleFunc("DELETE /v1/addr/", DeleteAddr)
 
 	mux.HandleFunc("GET /v1/offices", GetOffices)
