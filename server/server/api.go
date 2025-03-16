@@ -1108,11 +1108,11 @@ func GetCustomers(res http.ResponseWriter, req *http.Request) {
 }
 
 type CustomerAcc struct {
-	Cust_id    int           `json:"cust_id"`
-	Cust_fname string        `json:"cust_fname"`
-	Cust_lname string        `json:"cust_lname"`
-	Cust_email string        `json:"cust_email"`
-	Phone_num  string        `json:"phone_num"`
+	Cust_id    int    `json:"cust_id"`
+	Cust_fname string `json:"cust_fname"`
+	Cust_lname string `json:"cust_lname"`
+	Cust_email string `json:"cust_email"`
+	Phone_num  string `json:"phone_num"`
 }
 
 func GetCustomerById(res http.ResponseWriter, req *http.Request) {
@@ -1231,6 +1231,7 @@ type Order struct {
 	Ord_id           int            `json:"ord_id"`
 	Cust_id          int            `json:"cust_id"`
 	Ord_date         time.Time      `json:"ord_date"`
+	Status           string         `json:"status"`
 	Req_shipped_date time.Time      `json:"req_shipped_date"`
 	Comments         sql.NullString `json:"comments"`
 	Rating           int            `json:"rating"`
@@ -1239,6 +1240,7 @@ type Order struct {
 type OrderByCustId struct {
 	Ord_id           int       `json:"ord_id"`
 	Ord_date         time.Time `json:"ord_date"`
+	Status           string    `json:"status"`
 	Req_shipped_date time.Time `json:"req_shipped_date"`
 	Comments         string    `json:"comments"`
 	Rating           int       `json:"rating"`
@@ -1249,6 +1251,7 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 	rows, err := db.Query(`SELECT
 		ord_id,
 		cust_id,
+		status,
 		ord_date,
 		req_shipped_date,
 		comments,
@@ -1267,6 +1270,7 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 		var (
 			ord_id           int
 			cust_id          int
+			status           string
 			ord_date         time.Time
 			req_shipped_date time.Time
 			comments         sql.NullString
@@ -1275,6 +1279,7 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 		if err := rows.Scan(
 			&ord_id,
 			&cust_id,
+			&status,
 			&ord_date,
 			&req_shipped_date,
 			&comments,
@@ -1285,6 +1290,7 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 		orders = append(orders, Order{
 			Ord_id:   ord_id,
 			Cust_id:  cust_id,
+			Status:   status,
 			Ord_date: ord_date,
 			// take out the hour, minute, second, and nanosecond
 			Req_shipped_date: req_shipped_date.Truncate(24 * time.Hour),
@@ -1309,6 +1315,7 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 	rows, err := db.Query(`SELECT
 		ord_id,
 		cust_id,
+		status,
 		ord_date,
 		req_shipped_date,
 		comments,
@@ -1328,6 +1335,7 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 		var (
 			ord_id           int
 			cust_id          int
+			status           string
 			ord_date         time.Time
 			req_shipped_date time.Time
 			comments         string
@@ -1336,6 +1344,7 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 		if err := rows.Scan(
 			&ord_id,
 			&cust_id,
+			&status,
 			&ord_date,
 			&req_shipped_date,
 			&comments,
@@ -1346,6 +1355,7 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 		orders = append(orders, OrderByCustId{
 			Ord_id:   ord_id,
 			Ord_date: ord_date,
+			Status:   status,
 			// take out the hour, minute, second, and nanosecond
 			Req_shipped_date: req_shipped_date.Truncate(24 * time.Hour),
 			Comments:         comments,
@@ -1358,6 +1368,7 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 type OrderRequest struct {
 	Cust_id          int       `json:"cust_id"`
 	Ord_date         time.Time `json:"ord_date"`
+	Status           string    `json:"status"`
 	Req_shipped_date time.Time `json:"req_shipped_date"`
 	Comments         string    `json:"comments"`
 	Rating           int       `json:"rating"`

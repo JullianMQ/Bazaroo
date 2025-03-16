@@ -118,6 +118,7 @@ func CreateSchema() {
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS payments (
 		payment_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 		cust_id INT NOT NULL REFERENCES customers(cust_id),
+		status TEXT DEFAULT 'in cart',
 		payment_date TIMESTAMP,
 		amount NUMERIC(10,2) NOT NULL,
 		payment_status TEXT,
@@ -553,6 +554,7 @@ func AddOrder(order *OrderRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO orders (
 		cust_id,
 		ord_date,
+		status,
 		req_shipped_date,
 		comments,
 		rating
@@ -561,10 +563,12 @@ func AddOrder(order *OrderRequest) (int64, error) {
 		$2,
 		$3,
 		$4,
-		$5
+		$5,
+		$6
 	)`,
 		order.Cust_id,
 		order.Ord_date,
+		order.Status,
 		// Add 1 day and take out the hour, minute, second, and nanosecond
 		order.Req_shipped_date.Truncate(24*time.Hour),
 		order.Comments,
