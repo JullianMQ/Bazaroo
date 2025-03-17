@@ -21,7 +21,9 @@ func ServeHttp() {
 
 	handler := cors.New(corsOpts).Handler(mux)
 	fmt.Printf("Listening at port %s\n", PORT)
-	mux.HandleFunc("GET /", GetRoot)
+
+	mux.HandleFunc("/", GetRoot)
+	mux.Handle("/v1/images/", http.StripPrefix("/v1/images/", http.FileServer(http.Dir("./assets/images"))))
 
 	mux.HandleFunc("GET /v1/addr", GetAddr)
 	mux.HandleFunc("POST /v1/addr", PostAddr)

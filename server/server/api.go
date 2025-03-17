@@ -975,10 +975,12 @@ func GetProducts(res http.ResponseWriter, req *http.Request) {
 			Prod_line_name: prod_line_name,
 			Prod_vendor_id: prod_vendor_id,
 			Prod_desc:      prod_desc,
-			Prod_image:     prod_image,
-			Quan_in_stock:  quan_in_stock,
-			Buy_price:      buy_price,
-			Msrp:           msrp,
+			Prod_image: sql.NullString{
+				String: fmt.Sprintf("/v1/images/%s", prod_image.String),
+				Valid:  prod_image.Valid},
+			Quan_in_stock: quan_in_stock,
+			Buy_price:     buy_price,
+			Msrp:          msrp,
 		})
 	}
 	json.NewEncoder(res).Encode(products)
@@ -993,6 +995,7 @@ type ProductRequest struct {
 	Quan_in_stock  int     `json:"quan_in_stock"`
 	Buy_price      float64 `json:"buy_price"`
 	Msrp           float64 `json:"msrp"`
+	Office_id      float64 `json:"office_id"`
 }
 
 func PostProduct(res http.ResponseWriter, req *http.Request) {

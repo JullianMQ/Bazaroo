@@ -419,7 +419,8 @@ func AddProduct(product *ProductRequest) (int64, error) {
 		prod_image,
 		quan_in_stock,
 		buy_price,
-		msrp
+		msrp,
+		office_id
 	) VALUES (
 		$1,
 		$2,
@@ -428,7 +429,8 @@ func AddProduct(product *ProductRequest) (int64, error) {
 		$5,
 		$6,
 		$7,
-		$8
+		$8,
+		$9
 	)`,
 		product.Prod_name,
 		product.Prod_line_name,
@@ -437,7 +439,8 @@ func AddProduct(product *ProductRequest) (int64, error) {
 		product.Prod_image,
 		product.Quan_in_stock,
 		product.Buy_price,
-		product.Msrp)
+		product.Msrp,
+		product.Office_id)
 	if err != nil {
 		return 0, err
 	}
