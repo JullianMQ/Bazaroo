@@ -448,6 +448,30 @@ func AddProduct(product *ProductRequest) (int64, error) {
 	return id, err
 }
 
+func GetProdById(id int64) (Product, error) {
+	var prod Product
+	err := db.QueryRow(`SELECT
+		prod_id,
+		prod_name,
+		prod_line_name,
+		prod_desc,
+		prod_image,
+		quan_in_stock,
+		buy_price
+		FROM products WHERE prod_id = $1`, id).Scan(
+		&prod.Prod_id,
+		&prod.Prod_name,
+		&prod.Prod_line_name,
+		&prod.Prod_desc,
+		&prod.Prod_image,
+		&prod.Quan_in_stock,
+		&prod.Buy_price)
+	if err != nil {
+		return prod, err
+	}
+	return prod, nil
+}
+
 func GetCustById(id int64) (Customer, error) {
 	var cust Customer
 	err := db.QueryRow(`SELECT
