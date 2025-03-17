@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../index.dart';
 
 class BottomNavBar extends StatelessWidget {
-
+  final String userId;
+  const BottomNavBar({Key? key, required this.userId}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
@@ -16,7 +17,7 @@ class BottomNavBar extends StatelessWidget {
           icon: GestureDetector(
             onTap: () {
               Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => HomeScreen()),
+                MaterialPageRoute(builder: (context) => HomeScreen(userId: userId)),
               );
             },
             child: Icon(Icons.home, size: 30,),

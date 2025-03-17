@@ -3,6 +3,7 @@ import 'package:bazaroo_client/logincustomer.dart';
 import 'package:flutter/material.dart';
 
 class SignUpCustomer extends StatelessWidget {
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,7 +92,7 @@ class SignUpCustomer extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                  MaterialPageRoute(builder: (context) => LoginCustomer()),
                 );
               },
               style: ElevatedButton.styleFrom(

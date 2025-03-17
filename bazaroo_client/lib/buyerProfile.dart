@@ -1,88 +1,182 @@
 import 'package:flutter/material.dart';
-import 'nav/customer_nav.dart'; 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'nav/customer_nav.dart';
+import 'index.dart';
 
-class BuyerProfile extends StatelessWidget {
+class BuyerProfile extends StatefulWidget {
+  final String userId;
+  const BuyerProfile({Key? key, required this.userId}) : super(key: key);
+
+  @override
+  _BuyerProfileState createState() => _BuyerProfileState();
+}
+
+class _BuyerProfileState extends State<BuyerProfile> {
+  String id = '';
+  String firstName = '';
+  String lastName = '';
+  String email = '';
+  String mobile = '';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+  final url = Uri.parse('http://localhost:3000/v1/customers/?id=${widget.userId}');
+  try {
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+
+      setState(() {
+        id = data['cust_id']?.toString() ?? 'N/A';
+        firstName = data['cust_fname'] ?? 'N/A';
+        lastName = data['cust_lname'] ?? 'N/A';
+        email = data['cust_email'] ?? 'N/A';
+        mobile = data['phone_num'] ?? 'N/A';
+      });
+    } else {
+      print('Failed to load user data: ${response.statusCode}');
+    }
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white, // Set app bar color to white
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.red), // Set icon color to red
+     appBar: AppBar(
+        toolbarHeight: 80, 
         title: Row(
           children: [
-            Icon(Icons.person, color: Colors.red), // Red profile icon
-            SizedBox(width: 10),
+            Icon(Icons.location_on, color: Colors.red, size: 35,),
+            SizedBox(width: 8),
             Text(
               'My Account',
-              style: TextStyle(color: Colors.black), // Title in black
+              style: TextStyle(color: Colors.red, fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ],
         ),
-        centerTitle: true,
+        automaticallyImplyLeading: false,
+        actions: [
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 25.0),
+            child: IconButton(
+              icon: Icon(Icons.chevron_left, color: Colors.red, size: 35),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomeScreen(userId: widget.userId)),
+                );
+              },
+            ),
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextFormField(
-              initialValue: '**********', // Placeholder for masked ID
-              decoration: InputDecoration(
-                labelText: 'ID:',
-                labelStyle: TextStyle(color: Colors.grey),
-                enabled: false,
-              ),
-            ),
-            SizedBox(height: 10),
-            TextFormField(
-              decoration: InputDecoration(
-                labelText: 'First Name',
-                hintText: 'Firstname',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            TextFormField(
-              decoration: InputDecoration(
-                labelText: 'Last Name',
-                hintText: 'Lastname',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            TextFormField(
-              decoration: InputDecoration(
-                labelText: 'Email',
-                hintText: '*****@gmail.com',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            TextFormField(
-              decoration: InputDecoration(
-                labelText: 'Mobile',
-                hintText: '0956 555 5555',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 20),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  // Save button functionality
-                },
-                child: Text('Save'),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white, backgroundColor: Colors.red,
-                ),
-              ),
-            ),
-          ],
+    body: id.isEmpty
+    ? const Center(child: CircularProgressIndicator())
+    : Padding(
+  padding: const EdgeInsets.all(16.0),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.only(bottom: 10),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: Colors.grey, width: 1),
+          ),
+        ),
+        child: Text(
+          'ID: $id',
+          style: const TextStyle(color: Colors.black, fontSize: 20),
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
+      const SizedBox(height: 15),
+      const Text(
+        'First Name',
+        style: TextStyle(color: Colors.black, fontSize: 20),
       ),
+      const SizedBox(height: 5),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Text(
+          firstName,
+          style: const TextStyle(color: Colors.black, fontSize: 16),
+        ),
+      ),
+      const SizedBox(height: 15),
+      const Text(
+        'Last Name',
+        style: TextStyle(color: Colors.black, fontSize: 20),
+      ),
+      const SizedBox(height: 5),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Text(
+          lastName,
+          style: const TextStyle(color: Colors.black, fontSize: 16),
+        ),
+      ),
+      const SizedBox(height: 15),
+      const Text(
+        'Email',
+        style: TextStyle(color: Colors.black, fontSize: 20),
+      ),
+      const SizedBox(height: 5),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Text(
+          email,
+          style: const TextStyle(color: Colors.black, fontSize: 16),
+        ),
+      ),
+      const SizedBox(height: 15),
+      const Text(
+        'Mobile',
+        style: TextStyle(color: Colors.black, fontSize: 20),
+      ),
+      const SizedBox(height: 5),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Text(
+          mobile,
+          style: const TextStyle(color: Colors.black, fontSize: 16),
+        ),
+      ),
+    ],
+  ),
+),
+
+      bottomNavigationBar: BottomNavBar(userId: widget.userId),
     );
   }
 }

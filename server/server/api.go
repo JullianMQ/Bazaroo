@@ -1785,7 +1785,7 @@ func PostCustomerLogIn(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusOK)
 	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Customer %s %s (%s) logged in successfully", customer.Cust_fname, customer.Cust_lname, customer.Cust_email),
+		Message: fmt.Sprintf("%d", customer.Cust_id),
 	})
 }
 

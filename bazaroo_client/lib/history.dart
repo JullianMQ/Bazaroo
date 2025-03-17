@@ -3,6 +3,9 @@ import 'nav/customer_nav.dart';
 import 'index.dart';
 
 class PurchaseHistory extends StatelessWidget {
+  final String userId;
+  PurchaseHistory({required this.userId});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,7 +29,7 @@ class PurchaseHistory extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                  MaterialPageRoute(builder: (context) => HomeScreen(userId: userId)), 
                 );
               },
             ),
@@ -36,8 +39,7 @@ class PurchaseHistory extends StatelessWidget {
       body: Center(
         child: Text('This is the Purchase History screen'),
       ),
-      bottomNavigationBar: BottomNavBar(
-      ),
+      bottomNavigationBar: BottomNavBar(userId: userId),
     );
   }
 }

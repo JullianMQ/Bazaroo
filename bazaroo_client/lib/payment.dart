@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'index.dart';
 
 class PaymentOptions extends StatelessWidget {
+  final String userId;
+  PaymentOptions({required this.userId});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,7 +29,7 @@ class PaymentOptions extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                  MaterialPageRoute(builder: (context) => HomeScreen(userId: userId)),
                 );
               },
             ),

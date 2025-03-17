@@ -3,6 +3,9 @@ import 'newAddress.dart';
 import 'index.dart';
 
 class AddressScreen extends StatelessWidget {
+  final String userId;
+  AddressScreen({required this.userId});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,7 +30,7 @@ class AddressScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                  MaterialPageRoute(builder: (context) => HomeScreen(userId: userId)),
                 );
               },
             ),
@@ -42,7 +45,7 @@ class AddressScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => NewAddress()),
+                  MaterialPageRoute(builder: (context) => NewAddress(userId: userId)),
                 );
               },
               style: ElevatedButton.styleFrom(

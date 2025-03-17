@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'nav/customer_nav.dart';
 
 class Categories extends StatelessWidget {
+  final String userId;
+  Categories({required this.userId});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,8 +35,7 @@ class Categories extends StatelessWidget {
       body: Center(
         child: Text('This is the Categories screen'),
       ),
-      bottomNavigationBar: BottomNavBar(
-      ),
+      bottomNavigationBar: BottomNavBar(userId: userId),
     );
   }
 }

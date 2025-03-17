@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'nav/customer_nav.dart';
 
 class NewAddress extends StatelessWidget {
+  final String userId;
+  NewAddress({required this.userId});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,8 +35,7 @@ class NewAddress extends StatelessWidget {
       body: Center(
         child: Text('This is the New Address screen'),
       ),
-      bottomNavigationBar: BottomNavBar(
-      ),
+      bottomNavigationBar: BottomNavBar(userId: userId),
     );
   }
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'nav/customer_nav.dart';
 
 class Cart extends StatelessWidget {
+  final String userId;
+  Cart({required this.userId});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,8 +34,7 @@ class Cart extends StatelessWidget {
       body: Center(
         child: Text('This is the Cart screen'),
       ),
-      bottomNavigationBar: BottomNavBar(
-      ),
+      bottomNavigationBar: BottomNavBar(userId: userId),
     );
   }
 }

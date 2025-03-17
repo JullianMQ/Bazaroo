@@ -2,7 +2,7 @@ import 'package:bazaroo_client/startupscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'index.dart'; 
+import 'index.dart';
 import 'signupcustomer.dart';
 
 class LoginCustomer extends StatefulWidget {
@@ -14,8 +14,9 @@ class _LoginCustomerState extends State<LoginCustomer> {
   String responseMessage = "";
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
   Future<void> sendPostRequest() async {
-    final url = Uri.parse("https://bazaroo.onrender.com/v1/customers/login");
+    final url = Uri.parse("http://localhost:3000/v1/customers/login");
 
     try {
       final response = await http.post(
@@ -30,26 +31,21 @@ class _LoginCustomerState extends State<LoginCustomer> {
       final responseData = jsonDecode(response.body);
       setState(() {
         if (response.statusCode == 200) {
-          responseMessage = responseData["message"];
+          final String userId = responseData["message"].toString();
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
+            MaterialPageRoute(builder: (context) => HomeScreen(userId: userId)),
           );
-        } else if (response.statusCode == 400) {
-          responseMessage = "Enter your Email and Password!";
-        } else if (response.statusCode == 401) {
-          responseMessage = responseData["error"] ?? "Invalid Credentials!";
         } else {
-          responseMessage = "Unexpected Error: ${response.statusCode}";
+          responseMessage = responseData["error"] ?? "Invalid Credentials!";
         }
       });
     } catch (e) {
       setState(() {
-        responseMessage = "Error: Unable to connect to server. Server is offline";
+        responseMessage = "Error: Unable to connect to server. Please check your internet connection.";
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -87,8 +83,9 @@ class _LoginCustomerState extends State<LoginCustomer> {
               height: 350,
             ),
             SizedBox(height: 40),
-            Text(responseMessage, style: TextStyle(color: Colors.red),),
-            SizedBox(height: 10), 
+            if (responseMessage.isNotEmpty)
+              Text(responseMessage, style: TextStyle(color: Colors.red)),
+            SizedBox(height: 10),
             TextField(
               controller: emailController,
               decoration: InputDecoration(

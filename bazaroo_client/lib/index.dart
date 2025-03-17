@@ -5,37 +5,39 @@ import 'address.dart';
 import 'payment.dart';
 import 'history.dart';
 import 'nav/customer_nav.dart';  
-import 'main.dart';
 import 'logincustomer.dart';
 import 'buyerProfile.dart';
 
-
 class HomeScreen extends StatefulWidget {
+  final String userId;
+  const HomeScreen({Key? key, required this.userId}) : super(key: key);
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-    @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         toolbarHeight: 80,
         actions: <Widget>[Container()],
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Colors.red,
         title: Row(
           children: [
-           GestureDetector(
+            GestureDetector(
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()),  
+                  MaterialPageRoute(
+                      builder: (context) => HomeScreen(userId: widget.userId)),
                 );
               },
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Row(
                   children: [
                     Image.asset(
@@ -50,24 +52,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            Spacer(),
+            const Spacer(),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Builder(
                 builder: (context) => IconButton(
-                  icon: Icon(Icons.shopping_cart, color: Colors.white, size: 25),
+                  icon: const Icon(Icons.shopping_cart, color: Colors.white, size: 25),
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => Cart()),
+                    MaterialPageRoute(builder: (context) => Cart(userId: widget.userId)),
                   ),
                 ),
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Builder(
                 builder: (context) => IconButton(
-                  icon: Icon(Icons.menu, color: Colors.white, size: 25),
+                  icon: const Icon(Icons.menu, color: Colors.white, size: 25),
                   onPressed: () => Scaffold.of(context).openEndDrawer(),
                 ),
               ),
@@ -85,41 +87,40 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Align(
                   alignment: Alignment.topRight,
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
                     child: IconButton(
-                      icon: Icon(Icons.close, color: Colors.red),
+                      icon: const Icon(Icons.close, color: Colors.red),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
                 ),
               ),
             ),
-            ListTile(title: Text('My Account'), onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => BuyerProfile()));
+            ListTile(title: const Text('My Account'), onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => BuyerProfile(userId: widget.userId)));
             }),
             
-            ListTile(title: Text('Purchase History'), onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => PurchaseHistory()));
+            ListTile(title: const Text('Purchase History'), onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => PurchaseHistory(userId: widget.userId)));
             }),
-            ListTile(title: Text('Addresses'), onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => AddressScreen()));
+            ListTile(title: const Text('Addresses'), onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => AddressScreen(userId: widget.userId)));
             }),
-            ListTile(title: Text('Payment Options'), onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => PaymentOptions()));
+            ListTile(title: const Text('Payment Options'), onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => PaymentOptions(userId: widget.userId)));
             }),
-            ListTile(title: Text('Change Password')),
-            ListTile(title: Text('Settings')),
-            ListTile(title: Text('Log out'),  onTap: () {
-              Navigator.pushReplacement(context,MaterialPageRoute(builder: (context) => LoginCustomer()),
-    );
-  },
-),
-            ],
+            const ListTile(title: Text('Change Password')),
+            const ListTile(title: Text('Settings')),
+            ListTile(title: const Text('Log out'),  onTap: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginCustomer()),
+              );
+            }),
+          ],
         ),
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -129,8 +130,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container( // Heading
-                      margin: EdgeInsets.only(bottom: 10),
-                      child: Text('Featured',
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: const Text('Featured',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -139,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     Container( // Contents or image placeholder
-                      margin: EdgeInsets.only(bottom: 40),
+                      margin: const EdgeInsets.only(bottom: 40),
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
                         child: Container(
@@ -159,15 +160,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container( // Heading
-                      margin: EdgeInsets.only(bottom: 10),
+                      margin: const EdgeInsets.only(bottom: 10),
                       child: GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => Categories()),
+                            MaterialPageRoute(builder: (context) => Categories(userId: widget.userId)),
                           );
                         },
-                        child: Text(
+                        child: const Text(
                           'Categories',
                           style: TextStyle(
                             fontSize: 24,
@@ -180,8 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container( // Contents
                       child: GridView.builder(
                         shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
@@ -205,8 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
-      ),
+      bottomNavigationBar: BottomNavBar(userId: widget.userId),
     );
   }
 }
