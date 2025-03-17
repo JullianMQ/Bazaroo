@@ -472,6 +472,26 @@ func GetProdById(id int64) (Product, error) {
 	return prod, nil
 }
 
+func PutBoughtProdById(id int64, product *BoughtProdById) (int64, error) {
+	prod, err := GetProdById(id)
+	newQuan := prod.Quan_in_stock - product.Quan_bought
+
+	if product.Quan_bought > prod.Quan_in_stock {
+		return 0, errors.New("Quan_bought cannot be greater than Quan_in_stock")
+	}
+
+	result, err := db.Exec(`UPDATE products SET
+		quan_in_stock = $2
+		WHERE prod_id = $1`,
+		id, newQuan)
+	if err != nil {
+		return 0, err
+	}
+
+	rows, err := result.RowsAffected()
+	return rows, err
+}
+
 func GetCustById(id int64) (Customer, error) {
 	var cust Customer
 	err := db.QueryRow(`SELECT
