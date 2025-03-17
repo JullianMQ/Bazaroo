@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import '../sellerhomepage.dart';
+import '../homeseller.dart';
 
 class BottomNavBar extends StatelessWidget {
+  final String userId;
+  const BottomNavBar({Key? key, required this.userId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +18,7 @@ class BottomNavBar extends StatelessWidget {
           icon: GestureDetector(
             onTap: () {
               Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => SellerHome()),
+                MaterialPageRoute(builder: (context) => SellerHome(userId: userId)),
               );
             },
             child: Icon(Icons.home, size: 30,),

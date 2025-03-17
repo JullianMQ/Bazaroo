@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'nav/customer_nav.dart';
-import 'index.dart';
+import 'homecustomer.dart';
 
 class BuyerProfile extends StatefulWidget {
   final String userId;
@@ -37,7 +37,6 @@ class _BuyerProfileState extends State<BuyerProfile> {
         firstName = data['cust_fname'] ?? 'N/A';
         lastName = data['cust_lname'] ?? 'N/A';
         email = data['cust_email'] ?? 'N/A';
-        mobile = data['phone_num'] ?? 'N/A';
       });
     } else {
       print('Failed to load user data: ${response.statusCode}');
@@ -151,24 +150,6 @@ class _BuyerProfileState extends State<BuyerProfile> {
         ),
         child: Text(
           email,
-          style: const TextStyle(color: Colors.black, fontSize: 16),
-        ),
-      ),
-      const SizedBox(height: 15),
-      const Text(
-        'Mobile',
-        style: TextStyle(color: Colors.black, fontSize: 20),
-      ),
-      const SizedBox(height: 5),
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(5),
-        ),
-        child: Text(
-          mobile,
           style: const TextStyle(color: Colors.black, fontSize: 16),
         ),
       ),

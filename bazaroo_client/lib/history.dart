@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'nav/customer_nav.dart'; 
-import 'index.dart';
+import 'homecustomer.dart';
 
 class PurchaseHistory extends StatelessWidget {
   final String userId;

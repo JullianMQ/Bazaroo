@@ -1,8 +1,8 @@
-import 'package:bazaroo_client/startupscreen.dart';
+import 'package:bazaroo_client/index.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'index.dart';
+import 'homecustomer.dart';
 import 'signupcustomer.dart';
 
 class LoginCustomer extends StatefulWidget {
@@ -67,7 +67,7 @@ class _LoginCustomerState extends State<LoginCustomer> {
               },
             ),
             Text(
-              'Login',
+              'Customer Log In',
               style: TextStyle(color: Colors.red, fontSize: 40),
             ),
           ],

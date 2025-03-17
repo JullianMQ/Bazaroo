@@ -1,19 +1,122 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'sellerhomepage.dart';
+import 'package:http/http.dart' as http;
+import 'homeseller.dart';
+import 'loginseller.dart';
 
-class RegisterBusiness extends StatelessWidget {
+class RegisterBusiness extends StatefulWidget {
+  final String userId;
+  const RegisterBusiness({Key? key, required this.userId}) : super(key: key);
+
+  @override
+  _RegisterBusinessState createState() => _RegisterBusinessState();
+}
+
+class _RegisterBusinessState extends State<RegisterBusiness> {
+  final TextEditingController addressLine1Controller = TextEditingController();
+  final TextEditingController addressLine2Controller = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
+  final TextEditingController stateController = TextEditingController();
+  final TextEditingController postalCodeController = TextEditingController();
+  final TextEditingController countryController = TextEditingController();
+  String? errorMessage;
+
+  bool isLoading = false;
+
+  @override
+  void dispose() {
+    addressLine1Controller.dispose();
+    addressLine2Controller.dispose();
+    cityController.dispose();
+    stateController.dispose();
+    postalCodeController.dispose();
+    countryController.dispose();
+    super.dispose();
+  }
+
+  Future<void> registerBusiness() async {
+    if (addressLine1Controller.text.isEmpty ||
+        cityController.text.isEmpty ||
+        stateController.text.isEmpty ||
+        postalCodeController.text.isEmpty ||
+        countryController.text.isEmpty) {
+      setState(() {
+        errorMessage = 'Please fill in all required fields';
+      });
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    final url = Uri.parse("http://localhost:3000/v1/addr");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "addr_line1": addressLine1Controller.text.trim(),
+          "addr_line2": addressLine2Controller.text.trim(),
+          "city": cityController.text.trim(),
+          "state": stateController.text.trim(),
+          "postal_code": postalCodeController.text.trim(),
+          "country": countryController.text.trim(),
+        }),
+      );
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+
+      if (response.statusCode == 201) {
+        //fetch id here
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => SellerHome(userId: widget.userId)),
+        );
+      } else {
+        final responseData = jsonDecode(response.body);
+        setState(() {
+          errorMessage = responseData["error"] ?? "Unexpected Error: ${response.statusCode}";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error: $e';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'Register Business',
-          style: TextStyle(color: Colors.red, fontSize: 25),
+        toolbarHeight: 80,
+        title: Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.chevron_left, color: Colors.red, size: 35),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginSeller()),
+                );
+              },
+            ),
+            Text(
+              'Register Business',
+              style: TextStyle(color: Colors.red, fontSize: 40),
+            ),
+          ],
         ),
-        centerTitle: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -25,45 +128,85 @@ class RegisterBusiness extends StatelessWidget {
               height: 300,
             ),
             SizedBox(height: 30),
-            TextField(
+
+            if (errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  errorMessage!,
+                  style: TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              ),
+
+            TextFormField(
+              controller: addressLine1Controller,
               decoration: InputDecoration(
                 labelText: 'Address Line 1',
-                prefixIcon: Icon(Icons.home),
+                prefixIcon: const Icon(Icons.location_on),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
-            SizedBox(height: 20),
-            TextField(
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: addressLine2Controller,
               decoration: InputDecoration(
-                labelText: 'Address Line 2',
-                prefixIcon: Icon(Icons.location_on),
+                labelText: 'Address Line 2 (Optional)',
+                prefixIcon: const Icon(Icons.location_on_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
-            SizedBox(height: 20),
-            TextField(
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: cityController,
               decoration: InputDecoration(
-                labelText: 'Phone Number',
-                prefixIcon: Icon(Icons.phone),
+                labelText: 'City',
+                prefixIcon: const Icon(Icons.location_city),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: stateController,
+              decoration: InputDecoration(
+                labelText: 'State/Province',
+                prefixIcon: const Icon(Icons.map),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: postalCodeController,
+              decoration: InputDecoration(
+                labelText: 'Postal Code',
+                prefixIcon: const Icon(Icons.local_post_office),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: countryController,
+              decoration: InputDecoration(
+                labelText: 'Country',
+                prefixIcon: const Icon(Icons.flag),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
             SizedBox(height: 30),
+
             ElevatedButton(
-              onPressed: () {
-                // Handle business registration here
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => SellerHome()),
-                );
-              },
+              onPressed: isLoading ? null : registerBusiness,
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -71,13 +214,12 @@ class RegisterBusiness extends StatelessWidget {
                 ),
                 backgroundColor: Colors.red,
               ),
-              child: Text(
-                'Register',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
-              ),
+              child: isLoading
+                  ? CircularProgressIndicator(color: Colors.white)
+                  : Text(
+                      'Register',
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
             ),
           ],
         ),

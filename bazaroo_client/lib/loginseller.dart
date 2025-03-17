@@ -1,9 +1,10 @@
-import 'package:bazaroo_client/startupscreen.dart';
+import 'package:bazaroo_client/index.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'registerbusiness.dart';
 import 'signupseller.dart';
-import 'sellerhomepage.dart';
+import 'homeseller.dart';
 
 class LoginSeller extends StatefulWidget {
   @override
@@ -16,7 +17,7 @@ class _LoginSellerState extends State<LoginSeller> {
   final TextEditingController passwordController = TextEditingController();
 
   Future<void> sendPostRequest() async {
-    final url = Uri.parse("https://bazaroo.onrender.com/v1/emps/login");
+    final url = Uri.parse("http://localhost:3000/v1/emps/login");
 
     try {
       final response = await http.post(
@@ -31,17 +32,35 @@ class _LoginSellerState extends State<LoginSeller> {
       final responseData = jsonDecode(response.body);
       setState(() {
         if (response.statusCode == 200) {
-          responseMessage = responseData["message"];
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => SellerHome()),
-          );
+          final String userId = responseData["message"].toString();
+
+          http.get(Uri.parse("http://localhost:3000/v1/emps/?id=$userId")).then((res) {
+            final responseReg = jsonDecode(res.body);
+            bool isRegistered = responseReg['message'] == "true";
+            setState(() {
+              if (isRegistered) {
+                Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => SellerHome(userId: userId)),
+                );
+              }else{
+                Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => RegisterBusiness(userId: userId)),
+                );
+              }
+            });
+          });
         } else if (response.statusCode == 400) {
-          responseMessage = "Enter your Email and Password!";
+          setState(() {
+            responseMessage = "Enter your Email and Password!";
+          });
         } else if (response.statusCode == 401) {
-          responseMessage = responseData["error"] ?? "Invalid Credentials!";
+          setState(() {
+            responseMessage = responseData["error"] ?? "Invalid Credentials!";
+          });
         } else {
-          responseMessage = "Unexpected Error: ${response.statusCode}";
+          setState(() {
+            responseMessage = "Unexpected Error: ${response.statusCode}";
+          });
         }
       });
     } catch (e) {
@@ -71,7 +90,7 @@ class _LoginSellerState extends State<LoginSeller> {
               },
             ),
             Text(
-              'Login',
+              'Seller Log In',
               style: TextStyle(color: Colors.red, fontSize: 40),
             ),
           ],

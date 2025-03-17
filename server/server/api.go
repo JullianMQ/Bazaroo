@@ -632,7 +632,7 @@ func GetEmpId(res http.ResponseWriter, req *http.Request) {
 	}
 
 	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("%v", emp.Emp_fname),
+		Message: fmt.Sprintf("%v", emp.Office_id.Valid),
 	})
 }
 
@@ -684,7 +684,7 @@ func PostEmp(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddEmp(emp)
+	_, err = AddEmp(emp)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("CHECK IF OFFICE ID IN DATABASE: %s", err))
@@ -694,7 +694,7 @@ func PostEmp(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusCreated)
 	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Employee added successfully. %d rows affected", rows),
+		Message: fmt.Sprintf("Employee added successfully."),
 	})
 }
 
@@ -1214,7 +1214,7 @@ func PostCustomer(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddCustomer(customer)
+	_, err = AddCustomer(customer)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error adding customer, make sure addr_id is also in database"))
@@ -1223,7 +1223,7 @@ func PostCustomer(res http.ResponseWriter, req *http.Request) {
 	}
 	res.WriteHeader(http.StatusCreated)
 	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Customer added successfully. %d rows affected", rows),
+		Message: fmt.Sprintf("Customer added successfully."),
 	})
 }
 
@@ -1884,7 +1884,7 @@ func PostEmployeeSignUp(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := SignEmployee(employeeSignUp)
+	_, err = SignEmployee(employeeSignUp)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error adding employee, try again later."))
@@ -1894,7 +1894,7 @@ func PostEmployeeSignUp(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusCreated)
 	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Employee added successfully. %d rows affected", rows),
+		Message: fmt.Sprintf("Employee added successfully."),
 	})
 }
 
@@ -1933,7 +1933,7 @@ func PostEmpLogin(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusOK)
 	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Employee %s %s (%s) logged in successfully", employee.Emp_fname, employee.Emp_lname, employee.Emp_email),
+		Message: fmt.Sprintf("%d", employee.Emp_id),
 	})
 }
 
