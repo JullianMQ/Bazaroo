@@ -260,7 +260,7 @@ func AddAddr(addr *AddrRequest) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	rows, err := res.RowsAffected()
+	rows, err := res.LastInsertId()
 	return rows, nil
 }
 

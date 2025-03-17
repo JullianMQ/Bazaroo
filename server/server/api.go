@@ -390,7 +390,7 @@ func PostAddr(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddAddr(addr)
+	inserted_id, err := AddAddr(addr)
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			fmt.Sprintf("Could not add address, try again later."))
@@ -400,7 +400,7 @@ func PostAddr(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusCreated)
 	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Address added successfully. %d rows affected", rows),
+		Message: fmt.Sprintf("%d", inserted_id),
 	})
 }
 
