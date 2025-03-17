@@ -986,6 +986,45 @@ func GetProducts(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(products)
 }
 
+type ProductById struct {
+	Prod_id        int            `json:"prod_id"`
+	Prod_name      string         `json:"prod_name"`
+	Prod_line_name string         `json:"prod_line_name"`
+	Prod_desc      sql.NullString `json:"prod_desc"`
+	Prod_image     sql.NullString `json:"prod_image"`
+	Quan_in_stock  int            `json:"quan_in_stock"`
+	Buy_price      float64        `json:"buy_price"`
+}
+
+func GetProductById(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	prod_id := req.URL.Query().Get("id")
+	prod_id_int, err := strconv.ParseInt(prod_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+	rows, err := GetProdById(prod_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not get product by id, check if id is correct."))
+		log.Println(err)
+		return
+	}
+
+	json.NewEncoder(res).Encode(ProductById{
+		Prod_id:        rows.Prod_id,
+		Prod_name:      rows.Prod_name,
+		Prod_line_name: rows.Prod_line_name,
+		Prod_desc:      rows.Prod_desc,
+		Prod_image:     rows.Prod_image,
+		Quan_in_stock:  rows.Quan_in_stock,
+		Buy_price:      rows.Buy_price,
+	})
+}
+
 type ProductRequest struct {
 	Prod_name      string  `json:"prod_name"`
 	Prod_line_name string  `json:"prod_line_name"`
@@ -1413,9 +1452,9 @@ func PostOrder(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if order.Rating < 1 || order.Rating > 5 {
+	if order.Rating < 0 || order.Rating > 5 {
 		ErrorRes(res, http.StatusBadRequest,
-			"rating must be between 1 and 5")
+			"rating must be between 0 and 5")
 		return
 	}
 
