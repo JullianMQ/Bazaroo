@@ -21,7 +21,9 @@ func ServeHttp() {
 
 	handler := cors.New(corsOpts).Handler(mux)
 	fmt.Printf("Listening at port %s\n", PORT)
-	mux.HandleFunc("GET /", GetRoot)
+
+	mux.HandleFunc("/", GetRoot)
+	mux.Handle("/v1/images/", http.StripPrefix("/v1/images/", http.FileServer(http.Dir("./assets/images"))))
 
 	mux.HandleFunc("GET /v1/addr", GetAddr)
 	mux.HandleFunc("POST /v1/addr", PostAddr)
@@ -45,7 +47,9 @@ func ServeHttp() {
 	mux.HandleFunc("POST /v1/prodlines", PostProductLine)
 
 	mux.HandleFunc("GET /v1/products", GetProducts)
+	mux.HandleFunc("GET /v1/products/", GetProductById)
 	mux.HandleFunc("POST /v1/products", PostProduct)
+	mux.HandleFunc("PUT /v1/products/", PutBoughtProductById)
 
 	mux.HandleFunc("GET /v1/customers", GetCustomers)
 	mux.HandleFunc("GET /v1/customers/", GetCustomerById)

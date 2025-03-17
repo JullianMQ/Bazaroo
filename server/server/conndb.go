@@ -419,7 +419,8 @@ func AddProduct(product *ProductRequest) (int64, error) {
 		prod_image,
 		quan_in_stock,
 		buy_price,
-		msrp
+		msrp,
+		office_id
 	) VALUES (
 		$1,
 		$2,
@@ -428,7 +429,8 @@ func AddProduct(product *ProductRequest) (int64, error) {
 		$5,
 		$6,
 		$7,
-		$8
+		$8,
+		$9
 	)`,
 		product.Prod_name,
 		product.Prod_line_name,
@@ -437,12 +439,57 @@ func AddProduct(product *ProductRequest) (int64, error) {
 		product.Prod_image,
 		product.Quan_in_stock,
 		product.Buy_price,
-		product.Msrp)
+		product.Msrp,
+		product.Office_id)
 	if err != nil {
 		return 0, err
 	}
 	id, err := result.RowsAffected()
 	return id, err
+}
+
+func GetProdById(id int64) (Product, error) {
+	var prod Product
+	err := db.QueryRow(`SELECT
+		prod_id,
+		prod_name,
+		prod_line_name,
+		prod_desc,
+		prod_image,
+		quan_in_stock,
+		buy_price
+		FROM products WHERE prod_id = $1`, id).Scan(
+		&prod.Prod_id,
+		&prod.Prod_name,
+		&prod.Prod_line_name,
+		&prod.Prod_desc,
+		&prod.Prod_image,
+		&prod.Quan_in_stock,
+		&prod.Buy_price)
+	if err != nil {
+		return prod, err
+	}
+	return prod, nil
+}
+
+func PutBoughtProdById(id int64, product *BoughtProdById) (int64, error) {
+	prod, err := GetProdById(id)
+	newQuan := prod.Quan_in_stock - product.Quan_bought
+
+	if product.Quan_bought > prod.Quan_in_stock {
+		return 0, errors.New("Quan_bought cannot be greater than Quan_in_stock")
+	}
+
+	result, err := db.Exec(`UPDATE products SET
+		quan_in_stock = $2
+		WHERE prod_id = $1`,
+		id, newQuan)
+	if err != nil {
+		return 0, err
+	}
+
+	rows, err := result.RowsAffected()
+	return rows, err
 }
 
 func GetCustById(id int64) (Customer, error) {

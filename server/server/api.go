@@ -975,13 +975,98 @@ func GetProducts(res http.ResponseWriter, req *http.Request) {
 			Prod_line_name: prod_line_name,
 			Prod_vendor_id: prod_vendor_id,
 			Prod_desc:      prod_desc,
-			Prod_image:     prod_image,
-			Quan_in_stock:  quan_in_stock,
-			Buy_price:      buy_price,
-			Msrp:           msrp,
+			Prod_image: sql.NullString{
+				String: fmt.Sprintf("/v1/images/%s", prod_image.String),
+				Valid:  prod_image.Valid},
+			Quan_in_stock: quan_in_stock,
+			Buy_price:     buy_price,
+			Msrp:          msrp,
 		})
 	}
 	json.NewEncoder(res).Encode(products)
+}
+
+type ProductById struct {
+	Prod_id        int            `json:"prod_id"`
+	Prod_name      string         `json:"prod_name"`
+	Prod_line_name string         `json:"prod_line_name"`
+	Prod_desc      sql.NullString `json:"prod_desc"`
+	Prod_image     sql.NullString `json:"prod_image"`
+	Quan_in_stock  int            `json:"quan_in_stock"`
+	Buy_price      float64        `json:"buy_price"`
+}
+
+func GetProductById(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	prod_id := req.URL.Query().Get("id")
+	prod_id_int, err := strconv.ParseInt(prod_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+	rows, err := GetProdById(prod_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not get product by id, check if id is correct."))
+		log.Println(err)
+		return
+	}
+
+	json.NewEncoder(res).Encode(ProductById{
+		Prod_id:        rows.Prod_id,
+		Prod_name:      rows.Prod_name,
+		Prod_line_name: rows.Prod_line_name,
+		Prod_desc:      rows.Prod_desc,
+		Prod_image:     rows.Prod_image,
+		Quan_in_stock:  rows.Quan_in_stock,
+		Buy_price:      rows.Buy_price,
+	})
+}
+
+type BoughtProdById struct {
+	Quan_bought int `json:"quan_bought"`
+}
+
+func PutBoughtProductById(res http.ResponseWriter, req *http.Request) {
+	product := &BoughtProdById{}
+	res.Header().Set("Content-Type", "application/json")
+	prod_id := req.URL.Query().Get("id")
+	prod_id_int, err := strconv.ParseInt(prod_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+	err = json.NewDecoder(req.Body).Decode(&product)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsZero([]any{
+		product.Quan_bought}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"quan_bought cannot be zero")
+		return
+	}
+
+	_, err = PutBoughtProdById(prod_id_int, product)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error buying product, make sure bought quantity is lower or equal to quantity in stock."))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Product edited successfully"),
+	})
 }
 
 type ProductRequest struct {
@@ -993,6 +1078,7 @@ type ProductRequest struct {
 	Quan_in_stock  int     `json:"quan_in_stock"`
 	Buy_price      float64 `json:"buy_price"`
 	Msrp           float64 `json:"msrp"`
+	Office_id      float64 `json:"office_id"`
 }
 
 func PostProduct(res http.ResponseWriter, req *http.Request) {
@@ -1410,9 +1496,9 @@ func PostOrder(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if order.Rating < 1 || order.Rating > 5 {
+	if order.Rating < 0 || order.Rating > 5 {
 		ErrorRes(res, http.StatusBadRequest,
-			"rating must be between 1 and 5")
+			"rating must be between 0 and 5")
 		return
 	}
 
@@ -1736,7 +1822,7 @@ func PostCustomerSignUp(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := SignCustomer(customerSignUp)
+	_, err = SignCustomer(customerSignUp)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error adding customer, try again later."))
@@ -1746,7 +1832,7 @@ func PostCustomerSignUp(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusCreated)
 	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Customer added successfully. %d rows affected", rows),
+		Message: fmt.Sprintf("Customer added successfully."),
 	})
 }
 
