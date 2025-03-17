@@ -1025,6 +1025,50 @@ func GetProductById(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
+type BoughtProdById struct {
+	Quan_bought int `json:"quan_bought"`
+}
+
+func PutBoughtProductById(res http.ResponseWriter, req *http.Request) {
+	product := &BoughtProdById{}
+	res.Header().Set("Content-Type", "application/json")
+	prod_id := req.URL.Query().Get("id")
+	prod_id_int, err := strconv.ParseInt(prod_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+	err = json.NewDecoder(req.Body).Decode(&product)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsZero([]any{
+		product.Quan_bought}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"quan_bought cannot be zero")
+		return
+	}
+
+	_, err = PutBoughtProdById(prod_id_int, product)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error buying product, make sure bought quantity is lower or equal to quantity in stock."))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Product edited successfully"),
+	})
+}
+
 type ProductRequest struct {
 	Prod_name      string  `json:"prod_name"`
 	Prod_line_name string  `json:"prod_line_name"`
@@ -1778,7 +1822,7 @@ func PostCustomerSignUp(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := SignCustomer(customerSignUp)
+	_, err = SignCustomer(customerSignUp)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error adding customer, try again later."))
@@ -1788,7 +1832,7 @@ func PostCustomerSignUp(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusCreated)
 	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Customer added successfully. %d rows affected", rows),
+		Message: fmt.Sprintf("Customer added successfully."),
 	})
 }
 
