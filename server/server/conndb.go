@@ -158,8 +158,7 @@ func CreateSchema() {
 		PRIMARY KEY (ord_id, prod_id),
 		CONSTRAINT ord_id_fk FOREIGN KEY (ord_id) REFERENCES orders(ord_id),
 		CONSTRAINT prod_id_fk FOREIGN KEY (prod_id) REFERENCES products(prod_id),
-		quan_ordered INT NOT NULL,
-		price_each NUMERIC(10,2) NOT NULL
+		quan_ordered INT NOT NULL
 	)`)
 	if err != nil {
 		panic(err)
@@ -314,8 +313,6 @@ func AddOffice(office *OfficeRequest) (int64, error) {
 	}
 	return officeId, nil
 }
-
-// TODO: GET ALL EMPLOYEES
 
 func GetEmpById(id int64) (Employee, error) {
 	var emp Employee
@@ -609,7 +606,8 @@ func SignCustomer(customer *CustomerSignUp) (int64, error) {
 
 func AddOrder(order *OrderRequest) (int64, error) {
 	var err error
-	result, err := db.Exec(`INSERT INTO orders (
+	var id int64
+	err = db.QueryRow(`INSERT INTO orders (
 		cust_id,
 		status,
 		comments,
@@ -619,15 +617,14 @@ func AddOrder(order *OrderRequest) (int64, error) {
 		$2,
 		$3,
 		$4
-	)`,
+	) RETURNING ord_id`,
 		order.Cust_id,
 		order.Status,
 		order.Comments,
-		order.Rating)
+		order.Rating).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
-	id, err := result.RowsAffected()
 	return id, err
 }
 
@@ -675,6 +672,50 @@ func AddOrderDetail(orderDetail *OrderDetailRequest) (int64, error) {
 	}
 	id, err := result.RowsAffected()
 	return id, err
+}
+
+func CheckIfOrderPending(cust_id int64) int {
+	var ord_id int
+	err := db.QueryRow(`SELECT ord_id FROM orders WHERE cust_id = $1 AND status = 'in cart'`, cust_id).Scan(&ord_id)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		log.Println("Database error:", err)
+		return 0
+	}
+	return ord_id
+}
+
+func AddToCart(cust_id int64, orderdetail CartOrderDetail) (string, error) {
+	ord_id := CheckIfOrderPending(cust_id)
+
+	if ord_id == 0 {
+		newOrderID, err := AddOrder(&OrderRequest{
+			Cust_id:  int(cust_id),
+			Status:   "in cart",
+			Comments: "",
+			Rating:   0,
+		})
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("Error adding to cart: %v", err))
+		}
+		ord_id = int(newOrderID)
+	}
+
+	res, err := db.Exec(`INSERT INTO order_details (ord_id, prod_id, quan_ordered) VALUES ($1, $2, $3)`,
+		ord_id, orderdetail.Prod_id, orderdetail.Quan_ordered)
+	if err != nil {
+		return "", err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("Successfully added product. %d rows affected", rows), nil
 }
 
 func EditOrderDetailQuantity(order_id int64, prod_id int64, quan_ordered int) (int64, error) {

@@ -285,10 +285,6 @@ func GetOrderInCart(res http.ResponseWriter, req *http.Request) {
 			Quan_ordered: quantity,
 		})
 	}
-	if len(orderInCart) == 0 {
-
-	}
-
 	json.NewEncoder(res).Encode(orderInCart)
 }
 
@@ -348,7 +344,6 @@ func GetOrderInPaid(res http.ResponseWriter, req *http.Request) {
 	}
 	json.NewEncoder(res).Encode(orderPaid)
 }
-
 
 func isProdIdInDb(prod_id int) bool {
 	rows, err := db.Query(`SELECT
@@ -1478,18 +1473,18 @@ func PostCustomer(res http.ResponseWriter, req *http.Request) {
 }
 
 type Order struct {
-	Ord_id           int            `json:"ord_id"`
-	Cust_id          int            `json:"cust_id"`
-	Status           string         `json:"status"`
-	Comments         sql.NullString `json:"comments"`
-	Rating           int            `json:"rating"`
+	Ord_id   int            `json:"ord_id"`
+	Cust_id  int            `json:"cust_id"`
+	Status   string         `json:"status"`
+	Comments sql.NullString `json:"comments"`
+	Rating   int            `json:"rating"`
 }
 
 type OrderByCustId struct {
-	Ord_id           int       `json:"ord_id"`
-	Status           string    `json:"status"`
-	Comments         string    `json:"comments"`
-	Rating           int       `json:"rating"`
+	Ord_id   int    `json:"ord_id"`
+	Status   string `json:"status"`
+	Comments string `json:"comments"`
+	Rating   int    `json:"rating"`
 }
 
 func GetOrders(res http.ResponseWriter, req *http.Request) {
@@ -1512,11 +1507,11 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 	var orders []Order
 	for rows.Next() {
 		var (
-			ord_id           int
-			cust_id          int
-			status           string
-			comments         sql.NullString
-			rating           int
+			ord_id   int
+			cust_id  int
+			status   string
+			comments sql.NullString
+			rating   int
 		)
 		if err := rows.Scan(
 			&ord_id,
@@ -1531,8 +1526,8 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 			Ord_id:   ord_id,
 			Cust_id:  cust_id,
 			Status:   status,
-			Comments:         comments,
-			Rating:           rating,
+			Comments: comments,
+			Rating:   rating,
 		})
 	}
 	json.NewEncoder(res).Encode(orders)
@@ -1568,11 +1563,11 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 	var orders []OrderByCustId
 	for rows.Next() {
 		var (
-			ord_id           int
-			cust_id          int
-			status           string
-			comments         string
-			rating           int
+			ord_id   int
+			cust_id  int
+			status   string
+			comments string
+			rating   int
 		)
 		if err := rows.Scan(
 			&ord_id,
@@ -1586,18 +1581,18 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 		orders = append(orders, OrderByCustId{
 			Ord_id:   ord_id,
 			Status:   status,
-			Comments:         comments,
-			Rating:           rating,
+			Comments: comments,
+			Rating:   rating,
 		})
 	}
 	json.NewEncoder(res).Encode(orders)
 }
 
 type OrderRequest struct {
-	Cust_id          int       `json:"cust_id"`
-	Status           string    `json:"status"`
-	Comments         string    `json:"comments"`
-	Rating           int       `json:"rating"`
+	Cust_id  int    `json:"cust_id"`
+	Status   string `json:"status"`
+	Comments string `json:"comments"`
+	Rating   int    `json:"rating"`
 }
 
 func PostOrder(res http.ResponseWriter, req *http.Request) {
@@ -1787,10 +1782,9 @@ func PostPayment(res http.ResponseWriter, req *http.Request) {
 }
 
 type OrderDetail struct {
-	Ord_id       int     `json:"ord_id"`
-	Prod_id      int     `json:"prod_id"`
-	Quan_ordered int     `json:"quan_ordered"`
-	Price_each   float64 `json:"price_each"`
+	Ord_id       int `json:"ord_id"`
+	Prod_id      int `json:"prod_id"`
+	Quan_ordered int `json:"quan_ordered"`
 }
 
 func GetOrderDetailsByOrderId(res http.ResponseWriter, req *http.Request) {
@@ -1808,7 +1802,6 @@ func GetOrderDetailsByOrderId(res http.ResponseWriter, req *http.Request) {
 		ord_id,
 		prod_id,
 		quan_ordered,
-		price_each
 		FROM order_details
 		WHERE ord_id = $1`, order_id_int)
 	if err != nil {
@@ -1825,13 +1818,11 @@ func GetOrderDetailsByOrderId(res http.ResponseWriter, req *http.Request) {
 			ord_id       int
 			prod_id      int
 			quan_ordered int
-			price_each   float64
 		)
 		if err := rows.Scan(
 			&ord_id,
 			&prod_id,
-			&quan_ordered,
-			&price_each); err != nil {
+			&quan_ordered); err != nil {
 			log.Println(err)
 			return
 		}
@@ -1839,10 +1830,44 @@ func GetOrderDetailsByOrderId(res http.ResponseWriter, req *http.Request) {
 			Ord_id:       ord_id,
 			Prod_id:      prod_id,
 			Quan_ordered: quan_ordered,
-			Price_each:   price_each,
 		})
 	}
 	json.NewEncoder(res).Encode(orderDetails)
+}
+
+type CartOrderDetail struct {
+	Prod_id      int `json:"prod_id"`
+	Quan_ordered int `json:"quan_ordered"`
+}
+
+func PostAddToCart(res http.ResponseWriter, req *http.Request) {
+	var orderdetail CartOrderDetail
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest, "Invalid Customer ID")
+		log.Println(err)
+		log.Println(cust_id_int)
+	}
+
+	err = json.NewDecoder(req.Body).Decode(&orderdetail)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest, "Invalid request body")
+		log.Println(err)
+		log.Println(cust_id_int)
+	}
+
+	suc, err := AddToCart(cust_id_int, orderdetail)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest, "Invalid Customer ID")
+		log.Println(err)
+		log.Println(cust_id_int)
+	}
+
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: suc,
+	})
 }
 
 type QuantityOrderDetail struct {
@@ -1900,10 +1925,9 @@ func PutOrderDetailQuantity(res http.ResponseWriter, req *http.Request) {
 }
 
 type OrderDetailRequest struct {
-	Ord_id       int     `json:"ord_id"`
-	Prod_id      int     `json:"prod_id"`
-	Quan_ordered int     `json:"quan_ordered"`
-	Price_each   float64 `json:"price_each"`
+	Ord_id       int `json:"ord_id"`
+	Prod_id      int `json:"prod_id"`
+	Quan_ordered int `json:"quan_ordered"`
 }
 
 func PostOrderDetail(res http.ResponseWriter, req *http.Request) {
@@ -1920,7 +1944,6 @@ func PostOrderDetail(res http.ResponseWriter, req *http.Request) {
 	if ContainsZero([]any{
 		orderDetail.Prod_id,
 		orderDetail.Quan_ordered,
-		orderDetail.Price_each,
 		orderDetail.Ord_id}) {
 		ErrorRes(res, http.StatusBadRequest,
 			"quan_ordered, price_each, ord_id cannot be zero")
