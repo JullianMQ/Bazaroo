@@ -64,81 +64,77 @@ class _CartState extends State<Cart> {
       body: Padding(
         padding: EdgeInsets.all(10),
         child: products.isEmpty
-            ? Center(child: Text('Your cart is empty'))
-            : ListView.builder(
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return Container(
-                    padding: EdgeInsets.all(10),
-                    margin: EdgeInsets.only(bottom: 10),
+          ? Center(child: Text('Your cart is empty'))
+          : ListView.builder(
+          itemCount: products.length,
+          itemBuilder: (context, index) {
+            final product = products[index];
+            int quantity = int.tryParse(product['quan_ordered']?.toString() ?? '0') ?? 0;
+            print(quantity);
+            return Container(
+              padding: EdgeInsets.all(10),
+              margin: EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
                     decoration: BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(8),
+                  ),
+                  SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            product['prod_name'],
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product['prod_name'],
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                product['color'] ?? '',
-                                style: TextStyle(fontSize: 14, color: Colors.grey),
-                              ),
-                            ],
+                          Text(
+                            '₱${product['price'].toString()}',
+                            style: TextStyle(fontSize: 16, color: Colors.red),
                           ),
-                        ),
-                        Text(
-                          "₱${product['price']}",
-                          style: TextStyle(fontSize: 16, color: Colors.red),
-                        ),
-                        SizedBox(width: 10),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () {
+                        ],
+                      ),
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              if (quantity > 1) {
                                 setState(() {
-                                  if (product['quan_ordered'] > 1) {
-                                    product['quan_ordered']--;
-                                  }
+                                  products[index]['quan_ordered'] = quantity - 1;
                                 });
-                              },
-                              icon: Icon(Icons.remove_circle, color: Colors.red),
-                            ),
-                            Text(
-                              "${product['quan_ordered']}",
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  product['quan_ordered']++;
-                                });
-                              },
-                              icon: Icon(Icons.add_circle, color: Colors.red),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                              }
+                            },
+                            icon: Icon(Icons.remove_circle, color: Colors.red),
+                          ),
+                          Text(
+                            "${products[index]['quan_ordered']}", // Directly use updated value
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                products[index]['quan_ordered'] = quantity + 1;
+                              });
+                            },
+                            icon: Icon(Icons.add_circle, color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
+            );
+          }
+        ),
       ),
       bottomNavigationBar: BottomNavBar(userId: widget.userId),
     );
