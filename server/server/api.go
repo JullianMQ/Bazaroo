@@ -8,205 +8,16 @@ import (
 	"net/http"
 	"net/mail"
 	"regexp"
-	"slices"
 	"strconv"
 	"time"
+
+	"github.com/JullianMQ/Bazaroo/server/db"
 )
-
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
-
-type OkResponse struct {
-	Message string `json:"message"`
-}
-
-func ContainsEmpty(s []string) bool {
-	return slices.Contains(s, "")
-}
-
-func ContainsZero(v any) bool {
-	switch values := v.(type) {
-	case []int:
-		return containsInt(values, 0)
-	case []float64:
-		return containsFloat(values, 0.0)
-	case []any:
-		for _, value := range values {
-			if value == 0 {
-				return true
-			}
-		}
-		for _, value := range values {
-			if value == 0.0 {
-				return true
-			}
-		}
-		return false
-	default:
-		return false
-	}
-}
-
-func containsInt(v []int, target int) bool {
-	return slices.Contains(v, target)
-}
-
-func containsFloat(v []float64, target float64) bool {
-	return slices.Contains(v, target)
-}
-
-func ErrorRes(res http.ResponseWriter, status int, mess string) {
-	res.WriteHeader(status)
-	json.NewEncoder(res).Encode(ErrorResponse{
-		Error: mess,
-	})
-}
 
 func GetRoot(res http.ResponseWriter, req *http.Request) {
 	myMess := "Message"
 	res.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(res).Encode(myMess)
-}
-
-func isEmailValid(email string) bool {
-	if _, err := mail.ParseAddress(email); err != nil {
-		return false
-	}
-	return true
-}
-
-func isAddrIdInDb(addr_id int) bool {
-	rows, err := db.Query(`SELECT
-		addr_id
-		FROM addresses
-		WHERE addr_id = $1`, addr_id)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var addr_id int
-		if err := rows.Scan(&addr_id); err != nil {
-			log.Println(err)
-		}
-		if addr_id == addr_id {
-			return true
-		}
-	}
-	return false
-}
-
-func isEmailInDb(email string, ut string) bool {
-	var rows *sql.Rows
-	var err error
-
-	switch ut {
-	case "customer":
-		rows, err = db.Query(`SELECT
-			cust_email
-			FROM customers
-			WHERE cust_email = $1`, email)
-	case "employee":
-		rows, err = db.Query(`SELECT
-			emp_email
-			FROM employees
-			WHERE emp_email = $1`, email)
-	case "vendor":
-		rows, err = db.Query(`SELECT
-			vendor_email
-			FROM vendors
-			WHERE vendor_email = $1`, email)
-	default:
-		panic("Invalid user type")
-	}
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var emp_email string
-		if err := rows.Scan(&emp_email); err != nil {
-			log.Println(err)
-		}
-		if emp_email == email {
-			return true
-		}
-	}
-	return false
-}
-
-func isEmpIdInDb(emp_id int) bool {
-	rows, err := db.Query(`SELECT
-		emp_id
-		FROM employees
-		WHERE emp_id = $1`, emp_id)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var emp_id int
-		if err := rows.Scan(&emp_id); err != nil {
-			log.Println(err)
-		}
-		if emp_id == emp_id {
-			return true
-		}
-	}
-	return false
-}
-
-func isProdLineInDb(prod_line string) bool {
-	rows, err := db.Query(`SELECT
-		prod_line_name
-		FROM product_lines
-		WHERE prod_line_name = $1`, prod_line)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var prod_line_name string
-		if err := rows.Scan(&prod_line_name); err != nil {
-			log.Println(err)
-		}
-		if prod_line_name == prod_line {
-			return true
-		}
-	}
-	return false
-}
-
-func isPhoneValid(phone_num string) bool {
-	re := regexp.MustCompile(`^09\d{9}$`)
-	return re.MatchString(phone_num)
-}
-
-func CustomerIdInDb(cust_id int) bool {
-	rows, err := db.Query(`SELECT
-		cust_id
-		FROM customers
-		WHERE cust_id = $1`, cust_id)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var cust_id int
-		if err := rows.Scan(&cust_id); err != nil {
-			log.Println(err)
-		}
-		if cust_id == cust_id {
-			return true
-		}
-	}
-	return false
 }
 
 func isOrderIdInDb(order_id int) bool {
@@ -253,15 +64,6 @@ func isProdIdInDb(prod_id int) bool {
 	return false
 }
 
-type AddrRequest struct {
-	Addr_line1  string `json:"addr_line1"`
-	Addr_line2  string `json:"addr_line2"`
-	City        string `json:"city"`
-	State       string `json:"state"`
-	Postal_code string `json:"postal_code"`
-	Country     string `json:"country"`
-}
-
 type AddrResponse struct {
 	Addr_id     int            `json:"addr_id"`
 	Addr_line1  string         `json:"addr_line1"`
@@ -274,15 +76,7 @@ type AddrResponse struct {
 
 func GetAddr(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	rows, err := db.Query(`SELECT
-		addr_id,
-		addr_line1,
-		addr_line2,
-		city,
-		state,
-		postal_code,
-		country
-		FROM addresses`)
+	rows, err := db.GetAddrQuery()
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			"Could not decode request body")
@@ -354,6 +148,15 @@ func DeleteAddr(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(OkResponse{
 		Message: fmt.Sprintf("Address deleted successfully. %d rows affected", rows),
 	})
+}
+
+type AddrRequest struct {
+	Addr_line1  string `json:"addr_line1"`
+	Addr_line2  string `json:"addr_line2"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	Postal_code string `json:"postal_code"`
+	Country     string `json:"country"`
 }
 
 func PostAddr(res http.ResponseWriter, req *http.Request) {
