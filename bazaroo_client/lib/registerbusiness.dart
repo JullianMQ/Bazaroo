@@ -136,7 +136,6 @@ class _RegisterBusinessState extends State<RegisterBusiness> {
           return;
         }
 
-        //fetch id here
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -171,7 +170,7 @@ class _RegisterBusinessState extends State<RegisterBusiness> {
         title: Row(
           children: [
             IconButton(
-              icon: Icon(Icons.chevron_left, color: Colors.red, size: 35),
+              icon: Icon(Icons.chevron_right, color: Colors.red, size: 35),
               onPressed: () {
                 Navigator.pushReplacement(
                   context,

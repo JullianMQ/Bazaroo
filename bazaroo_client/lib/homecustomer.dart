@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'cart.dart';
-import 'categories.dart';
+import 'productsPage.dart';
 import 'address.dart';
 import 'payment.dart';
 import 'history.dart';
 import 'nav/customer_nav.dart';  
 import 'logincustomer.dart';
 import 'buyerProfile.dart';
+import 'productDetails.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userId;
@@ -17,6 +20,34 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List products = [];
+  final String baseUrl = "http://localhost:3000";
+
+   @override
+  void initState() {
+    super.initState();
+    fetchProducts();
+  }
+  @override
+
+  Future<void> fetchProducts() async {
+  final url = Uri.parse('$baseUrl/v1/products');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        List jsonData = json.decode(response.body);
+        setState(() {
+          products = jsonData;
+        });
+      } else {
+        print('Failed to load products: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching products: $e');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -155,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              // Categories
+              // Products
               Container(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,11 +197,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => Categories(userId: widget.userId)),
+                            MaterialPageRoute(builder: (context) => ProductsPage(userId: widget.userId)),
                           );
                         },
                         child: const Text(
-                          'Categories',
+                          'Products',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -189,12 +220,33 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisSpacing: 16,
                           childAspectRatio: 1,
                         ),
-                        itemCount: 8,
+                        itemCount: products.length,
                         itemBuilder: (context, index) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(15),
+                          final product = products[index];
+                          String imageUrl = "$baseUrl${product['prod_image']['String']}";
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProductDetailScreen(
+                                    userId: widget.userId,
+                                    prodId: product['prod_id'],
+                                    prodName: product['prod_name'],
+                                    buyPrice: product['buy_price'], 
+                                    imgPath: imageUrl,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                image: DecorationImage(
+                                  image: NetworkImage(imageUrl),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -211,3 +263,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+

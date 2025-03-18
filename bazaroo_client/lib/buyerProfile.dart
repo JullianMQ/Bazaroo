@@ -68,7 +68,7 @@ class _BuyerProfileState extends State<BuyerProfile> {
           Container(
             margin: EdgeInsets.symmetric(horizontal: 25.0),
             child: IconButton(
-              icon: Icon(Icons.chevron_left, color: Colors.red, size: 35),
+              icon: Icon(Icons.chevron_right, color: Colors.red, size: 35),
               onPressed: () {
                 Navigator.pushReplacement(
                   context,

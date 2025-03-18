@@ -25,7 +25,7 @@ class PurchaseHistory extends StatelessWidget {
           Container(
             margin: EdgeInsets.symmetric(horizontal: 25.0),
             child: IconButton(
-              icon: Icon(Icons.chevron_left, color: Colors.white, size: 35),
+              icon: Icon(Icons.chevron_right, color: Colors.white, size: 35),
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
