@@ -540,7 +540,7 @@ func PostOffice(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddOffice(office)
+	office_id, err := AddOffice(office)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error adding office, make sure addr_id is also in database"))
@@ -550,7 +550,7 @@ func PostOffice(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusCreated)
 	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Office added successfully. %d rows affected", rows),
+		Message: fmt.Sprintf("%d", office_id),
 	})
 }
 
@@ -633,6 +633,51 @@ func GetEmpId(res http.ResponseWriter, req *http.Request) {
 
 	json.NewEncoder(res).Encode(OkResponse{
 		Message: fmt.Sprintf("%v", emp.Office_id.Valid),
+	})
+}
+
+type EmployeeOffice struct {
+	Office_id int `json:"office_id"`
+}
+
+func PutEmpOffice(res http.ResponseWriter, req *http.Request) {
+	var empOffice *EmployeeOffice
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&empOffice)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	emp_id := req.URL.Query().Get("id")
+	emp_id_int, err := strconv.ParseInt(emp_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id, try again later."))
+		log.Println(err)
+		return
+	}
+
+	if !isEmpIdInDb(int(emp_id_int)) {
+		ErrorRes(res, http.StatusBadRequest,
+			"emp_id is invalid")
+		log.Println(err)
+		return
+	}
+
+	rows, err := EditEmpOffice(emp_id_int, empOffice.Office_id)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error editing employee office, make sure office_id is also in database"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Employee office edited successfully. %d rows affected", rows),
 	})
 }
 

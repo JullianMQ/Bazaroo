@@ -234,7 +234,9 @@ func TestQuery() {
 }
 
 func AddAddr(addr *AddrRequest) (int64, error) {
-	res, err := db.Exec(`INSERT INTO addresses(
+	var id int64
+
+	err := db.QueryRow(`INSERT INTO addresses(
 			addr_line1,
 			addr_line2,
 			city,
@@ -249,19 +251,19 @@ func AddAddr(addr *AddrRequest) (int64, error) {
 			$4,
 			$5,
 			$6
-		)`,
+		) RETURNING addr_id`,
 		addr.Addr_line1,
 		addr.Addr_line2,
 		addr.City,
 		addr.State,
 		addr.Postal_code,
 		strings.ToUpper(addr.Country),
-	)
+	).Scan(&id)
+
 	if err != nil {
 		return 0, err
 	}
-	rows, err := res.LastInsertId()
-	return rows, nil
+	return id, nil
 }
 
 func EditAddr(addr *AddrRequest, addr_id int64) (int64, error) {
@@ -297,22 +299,23 @@ func DeleteAddrById(addr_id int64) (int64, error) {
 }
 
 func AddOffice(office *OfficeRequest) (int64, error) {
-	res, err := db.Exec(`INSERT INTO offices(
+	var officeId int64
+
+	err := db.QueryRow(`INSERT INTO offices(
 			phone_num,
 			addr_id
 		)
 		VALUES (
 			$1,
 			$2
-		)`,
+		) RETURNING office_id`,
 		office.Phone_num,
 		office.Addr_id,
-	)
+	).Scan(&officeId)
 	if err != nil {
 		return 0, err
 	}
-	rows, err := res.RowsAffected()
-	return rows, nil
+	return officeId, nil
 }
 
 // TODO: GET ALL EMPLOYEES
@@ -357,6 +360,17 @@ func AddEmp(emp *EmployeeRequest) (int64, error) {
 		emp.Emp_email,
 		emp.Office_id,
 		emp.Job_title)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func EditEmpOffice(emp_id int64, office_id int) (int64, error) {
+	result, err := db.Exec(`UPDATE employees SET office_id = $1 WHERE emp_id = $2`,
+		office_id,
+		emp_id)
 	if err != nil {
 		return 0, err
 	}
