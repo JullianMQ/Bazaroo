@@ -62,6 +62,7 @@ func ServeHttp() {
 	mux.HandleFunc("GET /v1/orders", GetOrders)
 	mux.HandleFunc("GET /v1/orders/", GetOrderByCustId)
 	mux.HandleFunc("GET /v1/orders/cart/", GetOrderInCart)
+	mux.HandleFunc("POST /v1/orders/checkout/", CheckOutCart)
 	mux.HandleFunc("GET /v1/orders/paid/", GetOrderInPaid)
 	mux.HandleFunc("POST /v1/orders", PostOrder)
 

@@ -628,6 +628,19 @@ func AddOrder(order *OrderRequest) (int64, error) {
 	return id, err
 }
 
+func CheckOutCartQuery(cust_id int64) (int64, error) {
+	var id int64
+	err := db.QueryRow(`UPDATE orders
+		SET status = 'paid'
+		WHERE cust_id = $1
+		AND status = 'in cart' RETURNING ord_id`, cust_id).Scan(&id)
+
+	if err != nil {
+		return 0, err
+	}
+	return id, err
+}
+
 func AddPayment(payment *PaymentRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO payments (
 		cust_id,

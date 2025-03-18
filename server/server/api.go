@@ -1801,7 +1801,7 @@ func GetOrderDetailsByOrderId(res http.ResponseWriter, req *http.Request) {
 	rows, err := db.Query(`SELECT
 		ord_id,
 		prod_id,
-		quan_ordered,
+		quan_ordered
 		FROM order_details
 		WHERE ord_id = $1`, order_id_int)
 	if err != nil {
@@ -1848,25 +1848,48 @@ func PostAddToCart(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest, "Invalid Customer ID")
 		log.Println(err)
-		log.Println(cust_id_int)
+		return
 	}
 
 	err = json.NewDecoder(req.Body).Decode(&orderdetail)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest, "Invalid request body")
 		log.Println(err)
-		log.Println(cust_id_int)
+		return
 	}
 
 	suc, err := AddToCart(cust_id_int, orderdetail)
 	if err != nil {
-		ErrorRes(res, http.StatusBadRequest, "Invalid Customer ID")
+		ErrorRes(res, http.StatusBadRequest, fmt.Sprintf("Product or Customer ID invalid %v", err))
 		log.Println(err)
-		log.Println(cust_id_int)
+		return
 	}
 
 	json.NewEncoder(res).Encode(OkResponse{
 		Message: suc,
+	})
+}
+
+func CheckOutCart(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.Atoi(cust_id)
+	if err != nil {
+		json.NewEncoder(res).Encode(ErrorResponse{
+			Error: "Invalid Customer ID",
+		})
+		return
+	}
+
+	id, err := CheckOutCartQuery(int64(cust_id_int))
+	if err != nil {
+		json.NewEncoder(res).Encode(ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Order ID: %d", id),
 	})
 }
 
