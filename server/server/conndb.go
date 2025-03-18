@@ -719,13 +719,13 @@ func OrderInCart(cust_id int64) (*sql.Rows, error) {
 	return rows, nil
 }
 
-func OrderPaid(cust_id int64) (*sql.Rows, error) {
+func OrderInPaid(cust_id int64) (*sql.Rows, error) {
 	rows, err := db.Query(`SELECT
 		o.ord_id,
-		p.prod_name,
+		p.prod_name as name,
 		p.prod_id,
-		o.status,
-		od.quan_ordered
+		od.quan_ordered as quantity,
+		p.buy_price as price
 		FROM order_details od
 		JOIN orders o ON od.ord_id = o.ord_id
 		JOIN products p ON od.prod_id = p.prod_id
