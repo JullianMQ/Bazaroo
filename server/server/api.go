@@ -285,6 +285,10 @@ func GetOrderInCart(res http.ResponseWriter, req *http.Request) {
 			Quan_ordered: quantity,
 		})
 	}
+	if len(orderInCart) == 0 {
+
+	}
+
 	json.NewEncoder(res).Encode(orderInCart)
 }
 
@@ -1476,18 +1480,14 @@ func PostCustomer(res http.ResponseWriter, req *http.Request) {
 type Order struct {
 	Ord_id           int            `json:"ord_id"`
 	Cust_id          int            `json:"cust_id"`
-	Ord_date         time.Time      `json:"ord_date"`
 	Status           string         `json:"status"`
-	Req_shipped_date time.Time      `json:"req_shipped_date"`
 	Comments         sql.NullString `json:"comments"`
 	Rating           int            `json:"rating"`
 }
 
 type OrderByCustId struct {
 	Ord_id           int       `json:"ord_id"`
-	Ord_date         time.Time `json:"ord_date"`
 	Status           string    `json:"status"`
-	Req_shipped_date time.Time `json:"req_shipped_date"`
 	Comments         string    `json:"comments"`
 	Rating           int       `json:"rating"`
 }
@@ -1498,8 +1498,6 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 		ord_id,
 		cust_id,
 		status,
-		ord_date,
-		req_shipped_date,
 		comments,
 		rating
 		FROM orders`)
@@ -1517,8 +1515,6 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 			ord_id           int
 			cust_id          int
 			status           string
-			ord_date         time.Time
-			req_shipped_date time.Time
 			comments         sql.NullString
 			rating           int
 		)
@@ -1526,8 +1522,6 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 			&ord_id,
 			&cust_id,
 			&status,
-			&ord_date,
-			&req_shipped_date,
 			&comments,
 			&rating); err != nil {
 			log.Println(err)
@@ -1537,9 +1531,6 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 			Ord_id:   ord_id,
 			Cust_id:  cust_id,
 			Status:   status,
-			Ord_date: ord_date,
-			// take out the hour, minute, second, and nanosecond
-			Req_shipped_date: req_shipped_date.Truncate(24 * time.Hour),
 			Comments:         comments,
 			Rating:           rating,
 		})
@@ -1562,8 +1553,6 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 		ord_id,
 		cust_id,
 		status,
-		ord_date,
-		req_shipped_date,
 		comments,
 		rating
 		FROM orders
@@ -1582,8 +1571,6 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 			ord_id           int
 			cust_id          int
 			status           string
-			ord_date         time.Time
-			req_shipped_date time.Time
 			comments         string
 			rating           int
 		)
@@ -1591,8 +1578,6 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 			&ord_id,
 			&cust_id,
 			&status,
-			&ord_date,
-			&req_shipped_date,
 			&comments,
 			&rating); err != nil {
 			log.Println(err)
@@ -1600,10 +1585,7 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 		}
 		orders = append(orders, OrderByCustId{
 			Ord_id:   ord_id,
-			Ord_date: ord_date,
 			Status:   status,
-			// take out the hour, minute, second, and nanosecond
-			Req_shipped_date: req_shipped_date.Truncate(24 * time.Hour),
 			Comments:         comments,
 			Rating:           rating,
 		})
@@ -1613,9 +1595,7 @@ func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
 
 type OrderRequest struct {
 	Cust_id          int       `json:"cust_id"`
-	Ord_date         time.Time `json:"ord_date"`
 	Status           string    `json:"status"`
-	Req_shipped_date time.Time `json:"req_shipped_date"`
 	Comments         string    `json:"comments"`
 	Rating           int       `json:"rating"`
 }
@@ -1634,18 +1614,6 @@ func PostOrder(res http.ResponseWriter, req *http.Request) {
 	if !CustomerIdInDb(order.Cust_id) {
 		ErrorRes(res, http.StatusBadRequest,
 			"cust_id is not in db")
-		return
-	}
-
-	if order.Ord_date.IsZero() {
-		ErrorRes(res, http.StatusBadRequest,
-			"ord_date cannot be zero")
-		return
-	}
-
-	if order.Req_shipped_date.IsZero() {
-		ErrorRes(res, http.StatusBadRequest,
-			"req_shipped_date cannot be zero")
 		return
 	}
 
@@ -1973,8 +1941,6 @@ func PostOrderDetail(res http.ResponseWriter, req *http.Request) {
 
 	rows, err := AddOrderDetail(orderDetail)
 	if err != nil {
-		fmt.Println(orderDetail.Ord_id)
-		fmt.Println(orderDetail.Prod_id)
 
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error adding order detail, make sure ord_id and prod_id are also in database"))

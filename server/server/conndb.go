@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -105,8 +104,6 @@ func CreateSchema() {
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS orders (
 		ord_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 		cust_id INT NOT NULL REFERENCES customers(cust_id),
-		ord_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		req_shipped_date DATE NOT NULL,
 		comments TEXT,
 		rating INT
 	)`)
@@ -614,24 +611,17 @@ func AddOrder(order *OrderRequest) (int64, error) {
 	var err error
 	result, err := db.Exec(`INSERT INTO orders (
 		cust_id,
-		ord_date,
 		status,
-		req_shipped_date,
 		comments,
 		rating
 	) VALUES (
 		$1,
 		$2,
 		$3,
-		$4,
-		$5,
-		$6
+		$4
 	)`,
 		order.Cust_id,
-		order.Ord_date,
 		order.Status,
-		// Add 1 day and take out the hour, minute, second, and nanosecond
-		order.Req_shipped_date.Truncate(24*time.Hour),
 		order.Comments,
 		order.Rating)
 	if err != nil {
@@ -671,18 +661,15 @@ func AddOrderDetail(orderDetail *OrderDetailRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO order_details (
 		ord_id,
 		prod_id,
-		quan_ordered,
-		price_each
+		quan_ordered
 	) VALUES (
 		$1,
 		$2,
-		$3,
-		$4
+		$3
 	)`,
 		orderDetail.Ord_id,
 		orderDetail.Prod_id,
-		orderDetail.Quan_ordered,
-		orderDetail.Price_each)
+		orderDetail.Quan_ordered)
 	if err != nil {
 		return 0, err
 	}
