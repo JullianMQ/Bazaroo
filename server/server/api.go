@@ -231,6 +231,100 @@ func isOrderIdInDb(order_id int) bool {
 	return false
 }
 
+type IsOrderInCart struct {
+	Status string `json:"status"`
+}
+
+type OrdersInCart struct {
+	Ord_id       int     `json:"ord_id"`
+	Prod_name    string  `json:"prod_name"`
+	Prod_id      int     `json:"prod_id"`
+	Price        float64 `json:"price"`
+	Quan_ordered int     `json:"quan_ordered"`
+}
+
+func GetOrderInCart(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Could not parse id into int64."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := OrderInCart(cust_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not get order in cart, try again later")
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	orderInCart := []OrdersInCart{}
+	for rows.Next() {
+		var (
+			ord_id    int
+			prod_name string
+			prod_id   int
+			quantity  int
+			price     float64
+		)
+		if err := rows.Scan(
+			&ord_id,
+			&prod_name,
+			&prod_id,
+			&quantity,
+			&price,
+		); err != nil {
+			log.Println(err)
+		}
+		orderInCart = append(orderInCart, OrdersInCart{
+			Ord_id:       ord_id,
+			Prod_name:    prod_name,
+			Prod_id:      prod_id,
+			Price:        price * float64(quantity),
+			Quan_ordered: quantity,
+		})
+	}
+	json.NewEncoder(res).Encode(orderInCart)
+}
+
+type PaidOrder struct {
+	OrderId   int64  `json:"order_id"`
+	Prod_name string `json:"prod_name"`
+	Quantity  int    `json:"quantity"`
+	Price     int    `json:"price"`
+}
+
+// func GetPaidOrders(res http.ResponseWriter, req *http.Request) {
+// 	res.Header().Set("Content-Type", "application/json")
+// 	cust_id := req.URL.Query().Get("cust_id")
+// 	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+// 	if err != nil {
+// 		ErrorRes(res, http.StatusBadRequest,
+// 			"Invalid customer id")
+// 		log.Println(err)
+// 		return
+// 	}
+//
+// 	rows, err := OrderPaid(cust_id_int)
+// 	if err != nil {
+// 		ErrorRes(res, http.StatusInternalServerError,
+// 			"Internal server error")
+// 		log.Println(err)
+// 		return
+// 	}
+// 	defer rows.Close()
+//
+// 	var paidOrders []PaidOrder
+// 	for rows.Next() {
+// 		var
+// 	}
+// }
+
 func isProdIdInDb(prod_id int) bool {
 	rows, err := db.Query(`SELECT
 		prod_id

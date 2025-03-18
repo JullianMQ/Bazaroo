@@ -702,6 +702,40 @@ func EditOrderDetailQuantity(order_id int64, prod_id int64, quan_ordered int) (i
 	return rows, err
 }
 
+func OrderInCart(cust_id int64) (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		o.ord_id,
+		p.prod_name as name,
+		p.prod_id,
+		od.quan_ordered as quantity,
+		p.buy_price as price
+		FROM order_details od
+		JOIN orders o ON od.ord_id = o.ord_id
+		JOIN products p ON od.prod_id = p.prod_id
+		WHERE o.status = 'in cart' AND o.cust_id = $1;`, cust_id)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func OrderPaid(cust_id int64) (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		o.ord_id,
+		p.prod_name,
+		p.prod_id,
+		o.status,
+		od.quan_ordered
+		FROM order_details od
+		JOIN orders o ON od.ord_id = o.ord_id
+		JOIN products p ON od.prod_id = p.prod_id
+		WHERE o.status = 'paid' AND o.cust_id = $1;`, cust_id)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 func LogInCustomer(clog *CustomerLogIn, cust *Customer) error {
 	result, err := db.Query(`SELECT
 		cust_id,
