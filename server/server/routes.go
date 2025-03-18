@@ -62,6 +62,7 @@ func ServeHttp() {
 	mux.HandleFunc("GET /v1/orders", GetOrders)
 	mux.HandleFunc("GET /v1/orders/", GetOrderByCustId)
 	mux.HandleFunc("GET /v1/orders/cart/", GetOrderInCart)
+	mux.HandleFunc("POST /v1/orders/checkout/", CheckOutCart)
 	mux.HandleFunc("GET /v1/orders/paid/", GetOrderInPaid)
 	mux.HandleFunc("POST /v1/orders", PostOrder)
 
@@ -70,7 +71,7 @@ func ServeHttp() {
 
 	mux.HandleFunc("GET /v1/orderdetails/", GetOrderDetailsByOrderId)
 	mux.HandleFunc("PUT /v1/orderdetails/", PutOrderDetailQuantity)
-	mux.HandleFunc("POST /v1/orderdetails", PostOrderDetail)
+	mux.HandleFunc("POST /v1/orderdetails/addtocart/", PostAddToCart)
 
 	if err := http.ListenAndServe(PORT, handler); err != nil {
 		log.Fatal(err)

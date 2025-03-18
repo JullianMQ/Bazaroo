@@ -10,7 +10,7 @@
 			"name": "Addresses",
 			"item": [
 				{
-					"name": "localhost:3000/v1/addr",
+					"name": "ADD NEW ADDRESS",
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -47,7 +47,51 @@
 					"response": []
 				},
 				{
-					"name": "localhost:3000/v1/addr",
+					"name": "CHANGE ADDRESS",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer test-token",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"addr_line1\": \"A Avenue 321 St.\",\n    \"city\": \"Angeles\",\n    \"state\": \"Pampanga\",\n    \"postal_code\": \"2010\",\n    \"country\": \"phl\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/addr/?id=3",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"addr",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET ALL ADDRESSES",
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -63,6 +107,35 @@
 							"path": [
 								"v1",
 								"addr"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE ADDRESS",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/v1/addr/?id=5",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"addr",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "5"
+								}
 							]
 						}
 					},
@@ -169,7 +242,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:3000/v1/emps/?id=8",
+							"raw": "localhost:3000/v1/emps/?id=10",
 							"host": [
 								"localhost"
 							],
@@ -182,7 +255,7 @@
 							"query": [
 								{
 									"key": "id",
-									"value": "8"
+									"value": "10"
 								}
 							]
 						}
@@ -283,6 +356,72 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "REMOTE LOGIN",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"johndoe@example.com\",\n    \"password\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://bazaroo.onrender.com/v1/emps/login",
+							"protocol": "https",
+							"host": [
+								"bazaroo",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"v1",
+								"emps",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PUT OFFICE ID",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"office_id\": 21\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/emps/?id=10",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"emps",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -299,7 +438,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"prod_name\": \"Black Shirt\",\n    \"prod_line_name\": \"Clothing\",\n    \"prod_vendor_id\": 2,\n    \"prod_desc\": \"\",\n    \"prod_image\": \"\",\n    \"quan_in_stock\": 20,\n    \"buy_price\": 200,\n    \"msrp\": 150\n}",
+							"raw": "{\n    \"prod_name\": \"W NIKE DUNK LOW\",\n    \"prod_line_name\": \"Shoes\",\n    \"prod_vendor_id\": 2,\n    \"prod_desc\": \"\",\n    \"prod_image\": \"W+NIKE+DUNK+LOW.webp\",\n    \"quan_in_stock\": 220,\n    \"buy_price\": 7775,\n    \"msrp\": 7500,\n    \"office_id\": 11\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -337,6 +476,73 @@
 							"path": [
 								"v1",
 								"products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "localhost:3000/v1/products/?id=2",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/v1/products/?id=2",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"products",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "localhost:3000/v1/products/?id=2",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"quan_bought\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/products/?id=1",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"products",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
 							]
 						}
 					},
@@ -379,7 +585,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"prod_line_name\": \"cieacieaciea\",\n    \"prod_line_desc\": \"\"\n}",
+							"raw": "{\n    \"prod_line_name\": \"Shoes\",\n    \"prod_line_desc\": \"A shoe is an item of footwear intended to protect and comfort the human foot. \"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -465,6 +671,38 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
+							"raw": "{\n    \"first_name\": \"Lee\",\n    \"last_name\": \"Sin\",\n    \"email\": \"leesin@email.com\",\n    \"password\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/customers/signup",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"customers",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
 							"raw": "{\n    \"email\": \"leesin@email.com\",\n    \"password\": \"password\"\n}",
 							"options": {
 								"raw": {
@@ -482,6 +720,75 @@
 								"v1",
 								"customers",
 								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PUT REQUEST FOR ADDRESS",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"addr_id\": null\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/customers/addr/?id=3",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"customers",
+								"addr",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "3"
+								}
+							]
+						},
+						"description": "use null in order to reset(delete) address"
+					},
+					"response": []
+				},
+				{
+					"name": "GET BY CUST ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/v1/customers/?id=3",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"customers",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "3"
+								}
 							]
 						}
 					},
@@ -631,6 +938,93 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GET PAID ORDERS",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/v1/orders/paid/?id=1",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"orders",
+								"paid",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET CART ORDERS",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/v1/orders/cart/?id=1",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"orders",
+								"cart",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CHECKOUT CART",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:3000/v1/orders/checkout/?id=1",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"orders",
+								"checkout",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -647,7 +1041,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"ord_id\": 2,\n    \"prod_id\": 2,\n    \"quan_ordered\": 2,\n    \"price_each\": 300\n}",
+							"raw": "{\n    \"prod_id\": 10,\n    \"quan_ordered\": 200\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -655,14 +1049,22 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:3000/v1/orderdetails",
+							"raw": "localhost:3000/v1/orderdetails/addtocart/?id=1",
 							"host": [
 								"localhost"
 							],
 							"port": "3000",
 							"path": [
 								"v1",
-								"orderdetails"
+								"orderdetails",
+								"addtocart",
+								""
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
 							]
 						}
 					},
@@ -677,7 +1079,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:3000/v1/orderdetails/?id=2",
+							"raw": "localhost:3000/v1/orderdetails/?id=5",
 							"host": [
 								"localhost"
 							],
@@ -690,7 +1092,49 @@
 							"query": [
 								{
 									"key": "id",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CHANGE QUANTITY",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"quan_ordered\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/orderdetails/?ord_id=2&prod_id=1",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"orderdetails",
+								""
+							],
+							"query": [
+								{
+									"key": "ord_id",
 									"value": "2"
+								},
+								{
+									"key": "prod_id",
+									"value": "1"
 								}
 							]
 						}
