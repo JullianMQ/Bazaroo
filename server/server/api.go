@@ -1762,6 +1762,60 @@ func GetOrderDetailsByOrderId(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(orderDetails)
 }
 
+type QuantityOrderDetail struct {
+	Quan_ordered int `json:"quan_ordered"`
+}
+
+func PutOrderDetailQuantity(res http.ResponseWriter, req *http.Request) {
+	var quantityOrderDetail *QuantityOrderDetail
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&quantityOrderDetail)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	order_id := req.URL.Query().Get("ord_id")
+	order_id_int, err := strconv.ParseInt(order_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id, make sure that it is included in the query."))
+		log.Println(err)
+		return
+	}
+
+	prod_id := req.URL.Query().Get("prod_id")
+	prod_id_int, err := strconv.ParseInt(prod_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id, make sure that it is included in the query."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := EditOrderDetailQuantity(order_id_int, prod_id_int, quantityOrderDetail.Quan_ordered)
+	if rows == 0 {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error editing order detail quantity, make sure order_id and prod_id is in database"))
+		log.Println(err)
+		return
+	}
+
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error editing order detail quantity, make sure order_id and prod_id is in database"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("%d", rows),
+	})
+}
+
 type OrderDetailRequest struct {
 	Ord_id       int     `json:"ord_id"`
 	Prod_id      int     `json:"prod_id"`

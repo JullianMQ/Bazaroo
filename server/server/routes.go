@@ -67,6 +67,7 @@ func ServeHttp() {
 	mux.HandleFunc("POST /v1/payments/", PostPayment)
 
 	mux.HandleFunc("GET /v1/orderdetails/", GetOrderDetailsByOrderId)
+	mux.HandleFunc("PUT /v1/orderdetails/", PutOrderDetailQuantity)
 	mux.HandleFunc("POST /v1/orderdetails", PostOrderDetail)
 
 	if err := http.ListenAndServe(PORT, handler); err != nil {

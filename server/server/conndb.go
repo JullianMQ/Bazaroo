@@ -690,6 +690,18 @@ func AddOrderDetail(orderDetail *OrderDetailRequest) (int64, error) {
 	return id, err
 }
 
+func EditOrderDetailQuantity(order_id int64, prod_id int64, quan_ordered int) (int64, error) {
+	result, err := db.Exec(`UPDATE order_details
+		SET quan_ordered = $1
+		WHERE ord_id = $2 AND prod_id = $3`, quan_ordered, order_id, prod_id)
+
+	if err != nil {
+		return 0, err
+	}
+	rows, err := result.RowsAffected()
+	return rows, err
+}
+
 func LogInCustomer(clog *CustomerLogIn, cust *Customer) error {
 	result, err := db.Query(`SELECT
 		cust_id,
