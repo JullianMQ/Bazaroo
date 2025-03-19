@@ -232,12 +232,12 @@ func isOrderIdInDb(order_id int) bool {
 }
 
 type OrdersInCart struct {
-	Ord_id       int     `json:"ord_id"`
-	Prod_name    string  `json:"prod_name"`
-	Prod_id      int     `json:"prod_id"`
-	Prod_image   sql.NullString  `json:"prod_image"`
-	Price        float64 `json:"price"`
-	Quan_ordered int     `json:"quan_ordered"`
+	Ord_id       int            `json:"ord_id"`
+	Prod_name    string         `json:"prod_name"`
+	Prod_id      int            `json:"prod_id"`
+	Prod_image   sql.NullString `json:"prod_image"`
+	Price        float64        `json:"price"`
+	Quan_ordered int            `json:"quan_ordered"`
 }
 
 func GetOrderInCart(res http.ResponseWriter, req *http.Request) {
@@ -281,10 +281,10 @@ func GetOrderInCart(res http.ResponseWriter, req *http.Request) {
 			log.Println(err)
 		}
 		orderInCart = append(orderInCart, OrdersInCart{
-			Ord_id:       ord_id,
-			Prod_name:    prod_name,
-			Prod_id:      prod_id,
-			Prod_image:   sql.NullString{
+			Ord_id:    ord_id,
+			Prod_name: prod_name,
+			Prod_id:   prod_id,
+			Prod_image: sql.NullString{
 				String: fmt.Sprintf("/v1/images/%s", prod_image.String),
 				Valid:  prod_image.Valid,
 			},
@@ -296,12 +296,12 @@ func GetOrderInCart(res http.ResponseWriter, req *http.Request) {
 }
 
 type PaidOrder struct {
-	Ord_id       int     `json:"ord_id"`
-	Prod_name    string  `json:"prod_name"`
-	Prod_id      int     `json:"prod_id"`
-	Prod_image   sql.NullString  `json:"prod_image"`
-	Price        float64 `json:"price"`
-	Quan_ordered int     `json:"quan_ordered"`
+	Ord_id       int            `json:"ord_id"`
+	Prod_name    string         `json:"prod_name"`
+	Prod_id      int            `json:"prod_id"`
+	Prod_image   sql.NullString `json:"prod_image"`
+	Price        float64        `json:"price"`
+	Quan_ordered int            `json:"quan_ordered"`
 }
 
 func GetOrderInPaid(res http.ResponseWriter, req *http.Request) {
@@ -327,12 +327,12 @@ func GetOrderInPaid(res http.ResponseWriter, req *http.Request) {
 	orderPaid := []PaidOrder{}
 	for rows.Next() {
 		var (
-			ord_id    int
-			prod_name string
-			prod_id   int
+			ord_id     int
+			prod_name  string
+			prod_id    int
 			prod_image sql.NullString
-			quantity  int
-			price     float64
+			quantity   int
+			price      float64
 		)
 		if err := rows.Scan(
 			&ord_id,
@@ -345,9 +345,9 @@ func GetOrderInPaid(res http.ResponseWriter, req *http.Request) {
 			log.Println(err)
 		}
 		orderPaid = append(orderPaid, PaidOrder{
-			Ord_id:       ord_id,
-			Prod_name:    prod_name,
-			Prod_id:      prod_id,
+			Ord_id:    ord_id,
+			Prod_name: prod_name,
+			Prod_id:   prod_id,
 			Prod_image: sql.NullString{
 				String: fmt.Sprintf("/v1/images/%s", prod_image.String),
 				Valid:  prod_image.Valid},
@@ -1366,11 +1366,12 @@ func GetCustomers(res http.ResponseWriter, req *http.Request) {
 }
 
 type CustomerAcc struct {
-	Cust_id    int    `json:"cust_id"`
-	Cust_fname string `json:"cust_fname"`
-	Cust_lname string `json:"cust_lname"`
-	Cust_email string `json:"cust_email"`
-	Phone_num  string `json:"phone_num"`
+	Cust_id    int           `json:"cust_id"`
+	Cust_fname string        `json:"cust_fname"`
+	Cust_lname string        `json:"cust_lname"`
+	Cust_email string        `json:"cust_email"`
+	Addr_id    sql.NullInt64 `json:"addr_id"`
+	Phone_num  string        `json:"phone_num"`
 }
 
 func GetCustomerById(res http.ResponseWriter, req *http.Request) {
@@ -1397,6 +1398,7 @@ func GetCustomerById(res http.ResponseWriter, req *http.Request) {
 		Cust_fname: cust.Cust_fname,
 		Cust_lname: cust.Cust_lname,
 		Cust_email: cust.Cust_email,
+		Addr_id:    cust.Addr_id,
 		Phone_num:  cust.Phone_num,
 	})
 }
