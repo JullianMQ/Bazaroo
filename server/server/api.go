@@ -288,7 +288,7 @@ func GetOrderInCart(res http.ResponseWriter, req *http.Request) {
 				String: fmt.Sprintf("/v1/images/%s", prod_image.String),
 				Valid:  prod_image.Valid,
 			},
-			Price:        price * float64(quantity),
+			Price:        price,
 			Quan_ordered: quantity,
 		})
 	}

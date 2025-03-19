@@ -231,10 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 MaterialPageRoute(
                                   builder: (context) => ProductDetailScreen(
                                     userId: widget.userId,
-                                    prodId: product['prod_id'],
-                                    prodName: product['prod_name'],
-                                    buyPrice: product['buy_price'], 
-                                    imgPath: imageUrl,
+                                    prodId: product['prod_id']
                                   ),
                                 ),
                               );
