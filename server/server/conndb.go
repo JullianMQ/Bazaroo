@@ -766,6 +766,7 @@ func OrderInPaid(cust_id int64) (*sql.Rows, error) {
 		o.ord_id,
 		p.prod_name as name,
 		p.prod_id,
+		p.prod_image,
 		od.quan_ordered as quantity,
 		p.buy_price as price
 		FROM order_details od

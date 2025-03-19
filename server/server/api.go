@@ -299,6 +299,7 @@ type PaidOrder struct {
 	Ord_id       int     `json:"ord_id"`
 	Prod_name    string  `json:"prod_name"`
 	Prod_id      int     `json:"prod_id"`
+	Prod_image   sql.NullString  `json:"prod_image"`
 	Price        float64 `json:"price"`
 	Quan_ordered int     `json:"quan_ordered"`
 }
@@ -329,6 +330,7 @@ func GetOrderInPaid(res http.ResponseWriter, req *http.Request) {
 			ord_id    int
 			prod_name string
 			prod_id   int
+			prod_image sql.NullString
 			quantity  int
 			price     float64
 		)
@@ -336,6 +338,7 @@ func GetOrderInPaid(res http.ResponseWriter, req *http.Request) {
 			&ord_id,
 			&prod_name,
 			&prod_id,
+			&prod_image,
 			&quantity,
 			&price,
 		); err != nil {
@@ -345,6 +348,9 @@ func GetOrderInPaid(res http.ResponseWriter, req *http.Request) {
 			Ord_id:       ord_id,
 			Prod_name:    prod_name,
 			Prod_id:      prod_id,
+			Prod_image: sql.NullString{
+				String: fmt.Sprintf("/v1/images/%s", prod_image.String),
+				Valid:  prod_image.Valid},
 			Price:        price * float64(quantity),
 			Quan_ordered: quantity,
 		})
