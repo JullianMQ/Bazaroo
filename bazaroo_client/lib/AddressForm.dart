@@ -24,15 +24,34 @@ class _NewAddressState extends State<AddressForm> {
   bool isLoading = false;
   String? errorMessage;
 
-  Future<void> updateAddr(int addrId) async {
-    final url = Uri.parse("http://localhost:3000/v1/customer/addr/?id=${widget.userId}");
+  Future<void> updateAddr() async {
+    final url = Uri.parse("http://localhost:3000/v1/addr/?id=${widget.addrId}");
     http.put(url, headers: {"Content-Type": "application/json"},
       body: jsonEncode({
-        "addr_id": addrId,
+        "addr_line1": addressLine1Controller.text,
+        "addr_line2": addressLine2Controller.text,
+        "city": cityController.text,
+        "state": stateController.text,
+        "postal_code": postalCodeController.text,
+        "country": countryController.text,
       }),
     );
+    print("pota");
   }
-  Future<void> registerBusiness() async {
+
+  Future<void> addId(int message) async {
+      final putUrl = Uri.parse('http://localhost:3000/v1/customers/addr/?id=${widget.userId}');
+      http.put(putUrl, headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"addr_id":message}),
+      );
+      print(message);
+      print(widget.userId);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => AddressScreen(userId: widget.userId)),
+      );
+  }
+  Future<void> addAddress() async {
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -53,13 +72,9 @@ class _NewAddressState extends State<AddressForm> {
     );
 
     if (response.statusCode == 201) {
-      final resMess = jsonDecode(response.body);
-      var message = resMess['addr_id'];
-      print(message);
-       Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => AddressScreen(userId: widget.userId)),
-      );
+     final resMess = jsonDecode(response.body);
+     int message =int.parse(resMess['message']);
+      addId(message);
     } else {
       setState(() {
         errorMessage = "Failed to register address. Try again.";
@@ -73,6 +88,7 @@ class _NewAddressState extends State<AddressForm> {
 
   @override
   Widget build(BuildContext context) {
+    bool isEmpty = {widget.addrId} == 0;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -177,7 +193,7 @@ class _NewAddressState extends State<AddressForm> {
             const SizedBox(height: 10),
             SizedBox(height: 30),
             ElevatedButton(
-              onPressed: isLoading ? null : registerBusiness,
+              onPressed: isEmpty ?  () => updateAddr :  addAddress,
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -191,7 +207,7 @@ class _NewAddressState extends State<AddressForm> {
                       'Register',
                       style: TextStyle(fontSize: 18, color: Colors.white),
                     ),
-            ),
+            )
           ],
         ),
       ),

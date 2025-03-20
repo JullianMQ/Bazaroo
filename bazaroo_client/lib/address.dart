@@ -14,20 +14,34 @@ class AddressScreen extends StatefulWidget {
 
 class _AddressScreenState extends State<AddressScreen> {
   Map<String, dynamic>? products;
-  bool isLoading = true; // Track loading state
+  bool isLoading = true;
 
-  Future<void> delAddresses() async {
+  Future<void> updId() async {
     final putUrl = Uri.parse('http://localhost:3000/v1/customers/addr/?id=${widget.userId}');
-    final delUrl = Uri.parse('http://localhost:3000/v1/addr/?id=${widget.userId}');
-
-      final response = await http.put(putUrl);
-      Map<String, dynamic> jsonData = json.decode(response.body);
-      setState(() {
-        products = jsonData;
-        products?['addr_id']=0;
-        http.delete(delUrl);
-      });
+      http.put(putUrl, headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"addr_id":0}),
+      );
   }
+
+  Future<void> delAddresses(String id) async {
+    try {
+      updId();
+      final delUrl = Uri.parse('http://localhost:3000/v1/addr/?id=$id');
+      final response = await http.delete(delUrl);
+
+      if (response.statusCode == 201) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AddressScreen(userId: widget.userId)),
+        );
+      } else {
+        throw Exception('Failed to delete address: ${response.body}');
+      }
+    } catch (e) {
+      print(e); 
+    }
+  }
+
 
   Future<void> fetchAddresses() async {
     final url = Uri.parse('http://localhost:3000/v1/customers/?id=${widget.userId}');
@@ -58,7 +72,7 @@ class _AddressScreenState extends State<AddressScreen> {
 
   @override
   Widget build(BuildContext context) {
-    int addrId = products?['addr_id']?['Int64'] ?? 0; // Safely get addrId
+    int addrId = products?['addr_id']?['Int64'] ?? 0; 
 
     return Scaffold(
       appBar: AppBar(
@@ -133,7 +147,7 @@ class _AddressScreenState extends State<AddressScreen> {
                         ),
                       ],
                     ),
-                    Text(
+                    Text(//add get addr based on userId
                       '## St. ********************',
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -161,12 +175,12 @@ class _AddressScreenState extends State<AddressScreen> {
                         ),
                         SizedBox(width: 16),
                         InkWell(
-                          onTap: (delAddresses),
+                          onTap: () => delAddresses((products?['addr_id']['Int64'] ?? '').toString()),
                           child: Text(
                             'Delete',
                             style: TextStyle(color: Colors.red, decoration: TextDecoration.underline),
                           ),
-                        ),
+                        )
                       ],
                     ),
                     Divider(thickness: 1, color: Colors.grey[300]),
