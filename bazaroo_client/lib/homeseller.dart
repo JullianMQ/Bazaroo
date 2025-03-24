@@ -58,7 +58,7 @@ class SellerHome extends StatelessWidget {
         ],
       ),
       body: Center(
-        child: Text('This is the sellers home page $userId'),
+        child: Text('Work under progress. Stay tuned!'),
       ),
       bottomNavigationBar: BottomNavBar(userId: userId),
     );

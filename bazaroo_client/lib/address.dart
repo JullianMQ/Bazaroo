@@ -13,7 +13,8 @@ class AddressScreen extends StatefulWidget {
 }
 
 class _AddressScreenState extends State<AddressScreen> {
-  Map<String, dynamic>? products;
+  Map<String, dynamic>? customer;
+  String address ="";
   bool isLoading = true;
 
   Future<void> updId() async {
@@ -43,21 +44,46 @@ class _AddressScreenState extends State<AddressScreen> {
   }
 
 
-  Future<void> fetchAddresses() async {
+  Future<void> fetchCustomers() async {
     final url = Uri.parse('http://localhost:3000/v1/customers/?id=${widget.userId}');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+
+        Map<String, dynamic> jsonData = json.decode(response.body);
+        setState(() {
+          customer = jsonData;
+          int addrId = customer?['addr_id']["Int64"] ?? 0;
+          fetchAddresses(addrId);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load customer: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching customer: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> fetchAddresses(int addrId) async {
+    final url = Uri.parse('http://localhost:3000/v1/addr/?id=$addrId');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         Map<String, dynamic> jsonData = json.decode(response.body);
         setState(() {
-          products = jsonData;
+          Map<String, dynamic> content = jsonData;
+          address = '${content['addr_line1']} ${content['addr_line2']['String']} ${content['city']} ${content['state']} ${content['country']} ${content['postal_code']}' ;    
           isLoading = false;
         });
       } else {
-        throw Exception('Failed to load products: ${response.statusCode}');
+        throw Exception('Failed to load address: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching products: $e');
+      print('Error fetching address: $e');
       setState(() {
         isLoading = false;
       });
@@ -67,12 +93,12 @@ class _AddressScreenState extends State<AddressScreen> {
   @override
   void initState() {
     super.initState();
-    fetchAddresses();
+    fetchCustomers();
   }
 
   @override
   Widget build(BuildContext context) {
-    int addrId = products?['addr_id']?['Int64'] ?? 0; 
+    int addrId = customer?['addr_id']?['Int64'] ?? 0; 
 
     return Scaffold(
       appBar: AppBar(
@@ -137,26 +163,20 @@ class _AddressScreenState extends State<AddressScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            '${products?['cust_fname'] ?? ''} ${products?['cust_lname'] ?? ''}',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                            '${customer?['cust_fname'] ?? ''} ${customer?['cust_lname'] ?? ''}',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
                           ),
                         ),
                         Text(
-                          '${products?['phone_num'] ?? ''}',
+                          '${customer?['phone_num'] ?? ''}',
                           style: TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),
-                    Text(//add get addr based on userId
-                      '## St. ********************',
-                      style: TextStyle(color: Colors.grey),
-                    ),
                     Text(
-                      'Pampanga, Angeles, *****',
+                      address,
                       style: TextStyle(color: Colors.grey),
                     ),
-                    SizedBox(height: 8),
-
                     Row(
                       children: [
                         InkWell(
@@ -175,7 +195,7 @@ class _AddressScreenState extends State<AddressScreen> {
                         ),
                         SizedBox(width: 16),
                         InkWell(
-                          onTap: () => delAddresses((products?['addr_id']['Int64'] ?? '').toString()),
+                          onTap: () => delAddresses((customer?['addr_id']['Int64'] ?? '').toString()),
                           child: Text(
                             'Delete',
                             style: TextStyle(color: Colors.red, decoration: TextDecoration.underline),
