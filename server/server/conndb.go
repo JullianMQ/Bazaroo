@@ -262,6 +262,20 @@ func AddAddr(addr *AddrRequest) (int64, error) {
 	return id, nil
 }
 
+func GetAddrByID(id int64) (AddrResponse, error) {
+	var addr AddrResponse
+	err := db.QueryRow(`SELECT * FROM addresses WHERE addr_id = $1`, id).Scan(
+		&addr.Addr_id,
+		&addr.Addr_line1,
+		&addr.Addr_line2,
+		&addr.City,
+		&addr.State,
+		&addr.Postal_code,
+		&addr.Country,
+	)
+	return addr, err
+}
+
 func EditAddr(addr *AddrRequest, addr_id int64) (int64, error) {
 	result, err := db.Exec(`UPDATE addresses SET
 		addr_line1 = $1,

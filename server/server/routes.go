@@ -26,6 +26,7 @@ func ServeHttp() {
 	mux.Handle("/v1/images/", http.StripPrefix("/v1/images/", http.FileServer(http.Dir("./assets/images"))))
 
 	mux.HandleFunc("GET /v1/addr", GetAddr)
+	mux.HandleFunc("GET /v1/addr/", GetAddrID)
 	mux.HandleFunc("POST /v1/addr", PostAddr)
 	mux.HandleFunc("PUT /v1/addr/", PutAddr)
 	mux.HandleFunc("DELETE /v1/addr/", DeleteAddr)

@@ -451,6 +451,27 @@ func GetAddr(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(addr)
 }
 
+func GetAddrID(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	id := req.URL.Query().Get("id")
+	id_int, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id, try again later."))
+		log.Println(err)
+		return
+	}
+
+	addr, err := GetAddrByID(id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not get address, try again later."))
+		log.Println(err)
+		return
+	}
+	json.NewEncoder(res).Encode(addr)
+}
+
 func DeleteAddr(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	addr_id := req.URL.Query().Get("id")
