@@ -251,7 +251,7 @@ func GetOrderInCart(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := OrderInCart(cust_id_int)
+	rows, err := OrderInCartQuery(cust_id_int)
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			"Could not get order in cart, try again later")
@@ -315,7 +315,7 @@ func GetOrderInPaid(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := OrderInPaid(cust_id_int)
+	rows, err := OrderInPaidQuery(cust_id_int)
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			"Could not get order in paid, try again later")
@@ -401,15 +401,8 @@ type AddrResponse struct {
 
 func GetAddr(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	rows, err := db.Query(`SELECT
-		addr_id,
-		addr_line1,
-		addr_line2,
-		city,
-		state,
-		postal_code,
-		country
-		FROM addresses`)
+
+	rows, err := GetAddrQuery()
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			"Could not decode request body")
@@ -462,7 +455,7 @@ func GetAddrID(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	addr, err := GetAddrByID(id_int)
+	addr, err := GetAddrByIDQuery(id_int)
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			fmt.Sprintf("Could not get address, try again later."))
@@ -470,38 +463,6 @@ func GetAddrID(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	json.NewEncoder(res).Encode(addr)
-}
-
-func DeleteAddr(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	addr_id := req.URL.Query().Get("id")
-	addr_id_int, err := strconv.ParseInt(addr_id, 10, 64)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			fmt.Sprintf("Could not parse id into int64, try again later."))
-		log.Println(err)
-		return
-	}
-
-	rows, err := DeleteAddrById(addr_id_int)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			fmt.Sprintf("Could not delete address, try again later."))
-		log.Println(err)
-		return
-	}
-
-	if rows == 0 {
-		json.NewEncoder(res).Encode(OkResponse{
-			Message: "Address not found",
-		})
-		return
-	}
-
-	res.WriteHeader(http.StatusCreated)
-	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Address deleted successfully. %d rows affected", rows),
-	})
 }
 
 func PostAddr(res http.ResponseWriter, req *http.Request) {
@@ -538,7 +499,7 @@ func PostAddr(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	inserted_id, err := AddAddr(addr)
+	inserted_id, err := AddAddrQuery(addr)
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			fmt.Sprintf("Could not add address, try again later."))
@@ -596,10 +557,10 @@ func PutAddr(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := EditAddr(addr, addr_id_int)
+	rows, err := EditAddrQuery(addr, addr_id_int)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error editing address, make sure addr_id is also in database"))
+			fmt.Sprintf("Error editing address, make sure addr_id is in the database"))
 		log.Println(err)
 		return
 	}
@@ -610,21 +571,56 @@ func PutAddr(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
+func DeleteAddr(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	addr_id := req.URL.Query().Get("id")
+	addr_id_int, err := strconv.ParseInt(addr_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := DeleteAddrByIdQuery(addr_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not delete address, try again later."))
+		log.Println(err)
+		return
+	}
+
+	if rows == 0 {
+		json.NewEncoder(res).Encode(OkResponse{
+			Message: "Address not found",
+		})
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Address deleted successfully. %d rows affected", rows),
+	})
+}
+
 type Office struct {
 	Office_id int    `json:"office_id"`
 	Phone_num string `json:"phone_num"`
 	Addr_id   int    `json:"addr_id"`
 }
 
+type OfficeRequest struct {
+	Phone_num string `json:"phone_num"`
+	Addr_id   int    `json:"addr_id"`
+}
+
 func GetOffices(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	rows, err := db.Query(`SELECT
-		office_id,
-		phone_num,
-		addr_id
-		FROM offices`)
+	rows, err := GetOfficesQuery()
 	if err != nil {
-		panic(err)
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
 	}
 	defer rows.Close()
 
@@ -651,11 +647,6 @@ func GetOffices(res http.ResponseWriter, req *http.Request) {
 		})
 	}
 	json.NewEncoder(res).Encode(offices)
-}
-
-type OfficeRequest struct {
-	Phone_num string `json:"phone_num"`
-	Addr_id   int    `json:"addr_id"`
 }
 
 func PostOffice(res http.ResponseWriter, req *http.Request) {
@@ -688,10 +679,10 @@ func PostOffice(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	office_id, err := AddOffice(office)
+	office_id, err := AddOfficeQuery(office)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding office, make sure addr_id is also in database"))
+			fmt.Sprintf("Error adding office, make sure addr_id is in the database"))
 		log.Println(err)
 		return
 	}
@@ -711,18 +702,49 @@ type Employee struct {
 	Job_title string        `json:"job_title"`
 }
 
+type EmployeeOffice struct {
+	Office_id int `json:"office_id"`
+}
+
+type EmployeeRequest struct {
+	Emp_fname string `json:"emp_fname"`
+	Emp_lname string `json:"emp_lname"`
+	Emp_email string `json:"emp_email"`
+	Office_id int    `json:"office_id"`
+	Job_title string `json:"job_title"`
+}
+
+func GetEmpId(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	emp_id := req.URL.Query().Get("id")
+	emp_id_int, err := strconv.ParseInt(emp_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+
+	emp, err := GetEmpByIdQuery(emp_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not get employee by id, check if id is correct."))
+		log.Println(err)
+		return
+	}
+
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("%v", emp.Office_id.Valid),
+	})
+}
+
 func GetEmps(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	rows, err := db.Query(`SELECT
-		emp_id,
-		emp_fname,
-		emp_lname,
-		emp_email,
-		office_id,
-		job_title
-		FROM employees`)
+	rows, err := GetEmpsQuery()
 	if err != nil {
-		panic(err)
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
 	}
 	defer rows.Close()
 
@@ -760,34 +782,6 @@ func GetEmps(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(emps)
 }
 
-func GetEmpId(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	emp_id := req.URL.Query().Get("id")
-	emp_id_int, err := strconv.ParseInt(emp_id, 10, 64)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			fmt.Sprintf("Could not parse id into int64, try again later."))
-		log.Println(err)
-		return
-	}
-
-	emp, err := GetEmpById(emp_id_int)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			fmt.Sprintf("Could not get employee by id, check if id is correct."))
-		log.Println(err)
-		return
-	}
-
-	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("%v", emp.Office_id.Valid),
-	})
-}
-
-type EmployeeOffice struct {
-	Office_id int `json:"office_id"`
-}
-
 func PutEmpOffice(res http.ResponseWriter, req *http.Request) {
 	var empOffice *EmployeeOffice
 	res.Header().Set("Content-Type", "application/json")
@@ -815,10 +809,10 @@ func PutEmpOffice(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := EditEmpOffice(emp_id_int, empOffice.Office_id)
+	rows, err := EditEmpOfficeQuery(emp_id_int, empOffice.Office_id)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error editing employee office, make sure office_id is also in database"))
+			fmt.Sprintf("Error editing employee office, make sure office_id is in the database"))
 		log.Println(err)
 		return
 	}
@@ -827,14 +821,6 @@ func PutEmpOffice(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(OkResponse{
 		Message: fmt.Sprintf("Employee office edited successfully. %d rows affected", rows),
 	})
-}
-
-type EmployeeRequest struct {
-	Emp_fname string `json:"emp_fname"`
-	Emp_lname string `json:"emp_lname"`
-	Emp_email string `json:"emp_email"`
-	Office_id int    `json:"office_id"`
-	Job_title string `json:"job_title"`
 }
 
 func PostEmp(res http.ResponseWriter, req *http.Request) {
@@ -877,7 +863,7 @@ func PostEmp(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, err = AddEmp(emp)
+	_, err = AddEmpQuery(emp)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("CHECK IF OFFICE ID IN DATABASE: %s", err))
@@ -899,17 +885,38 @@ type Vendor struct {
 	Addr_id          int    `json:"addr_id"`
 }
 
+type VendorRequest struct {
+	Vendor_name      string `json:"vendor_name"`
+	Vendor_email     string `json:"vendor_email"`
+	Vendor_phone_num string `json:"vendor_phone_num"`
+	Addr_id          int    `json:"addr_id"`
+}
+
+func GetVendorId(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	vendor_id := req.URL.Query().Get("id")
+	vendor_id_int, err := strconv.ParseInt(vendor_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			"Invalid vendor id")
+		return
+	}
+
+	vendor, err := GetVendorByIdQuery(vendor_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Error getting vendor")
+		log.Println(err)
+		return
+	}
+
+	json.NewEncoder(res).Encode(vendor)
+}
+
 func GetVendors(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	rows, err := db.Query(`SELECT
-		vendor_id,
-		vendor_name,
-		vendor_email,
-		vendor_phone_num,
-		addr_id
-		FROM vendors`)
+	rows, err := GetVendorsQuery()
 	if err != nil {
-		log.Println(fmt.Sprintf("CHECK IF VENDOR ID IN DATABASE: %s", err))
 		log.Println(err)
 		return
 	}
@@ -925,7 +932,6 @@ func GetVendors(res http.ResponseWriter, req *http.Request) {
 		var addr_id int
 		err := rows.Scan(&vendor_id, &vendor_name, &vendor_email, &vendor_phone_num, &addr_id)
 		if err != nil {
-			log.Println(fmt.Sprintf("CHECK IF VENDOR ID IN DATABASE: %s", err))
 			log.Println(err)
 			return
 		}
@@ -939,34 +945,6 @@ func GetVendors(res http.ResponseWriter, req *http.Request) {
 		vendors = append(vendors, vendor)
 	}
 	json.NewEncoder(res).Encode(vendors)
-}
-
-func GetVendorId(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	vendor_id := req.URL.Query().Get("id")
-	vendor_id_int, err := strconv.ParseInt(vendor_id, 10, 64)
-	if err != nil {
-		ErrorRes(res, http.StatusBadRequest,
-			"Invalid vendor id")
-		return
-	}
-
-	vendor, err := GetVendorById(vendor_id_int)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			"Error getting vendor")
-		log.Println(err)
-		return
-	}
-
-	json.NewEncoder(res).Encode(vendor)
-}
-
-type VendorRequest struct {
-	Vendor_name      string `json:"vendor_name"`
-	Vendor_email     string `json:"vendor_email"`
-	Vendor_phone_num string `json:"vendor_phone_num"`
-	Addr_id          int    `json:"addr_id"`
 }
 
 func PostVendor(res http.ResponseWriter, req *http.Request) {
@@ -1014,10 +992,10 @@ func PostVendor(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddVendor(vendor)
+	rows, err := AddVendorQuery(vendor)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding vendor, make sure addr_id is also in database"))
+			fmt.Sprintf("Error adding vendor, make sure addr_id is in the database"))
 		log.Println(err)
 		return
 	}
@@ -1033,12 +1011,14 @@ type ProductLine struct {
 	Prod_line_desc sql.NullString `json:"prod_line_desc"`
 }
 
+type ProductLineRequest struct {
+	Prod_line_name string `json:"prod_line_name"`
+	Prod_line_desc string `json:"prod_line_desc"`
+}
+
 func GetProductLine(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	rows, err := db.Query(`SELECT
-		prod_line_name,
-		prod_line_desc
-		FROM product_lines`)
+	rows, err := GetProductLinesQuery()
 	if err != nil {
 		log.Println(err)
 		return
@@ -1065,11 +1045,6 @@ func GetProductLine(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(productLines)
 }
 
-type ProductLineRequest struct {
-	Prod_line_name string `json:"prod_line_name"`
-	Prod_line_desc string `json:"prod_line_desc"`
-}
-
 func PostProductLine(res http.ResponseWriter, req *http.Request) {
 	var productLine *ProductLineRequest
 	res.Header().Set("Content-Type", "application/json")
@@ -1089,7 +1064,7 @@ func PostProductLine(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddProductLine(productLine)
+	rows, err := AddProductLineQuery(productLine)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error adding product line, try again later"))
@@ -1115,19 +1090,52 @@ type Product struct {
 	Msrp           float64        `json:"msrp"`
 }
 
+type ProductById struct {
+	Prod_id        int            `json:"prod_id"`
+	Prod_name      string         `json:"prod_name"`
+	Prod_line_name string         `json:"prod_line_name"`
+	Prod_desc      sql.NullString `json:"prod_desc"`
+	Prod_image     sql.NullString `json:"prod_image"`
+	Quan_in_stock  int            `json:"quan_in_stock"`
+	Buy_price      float64        `json:"buy_price"`
+}
+
+type BoughtProdById struct {
+	Quan_bought int `json:"quan_bought"`
+}
+
+func GetProductById(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	prod_id := req.URL.Query().Get("id")
+	prod_id_int, err := strconv.ParseInt(prod_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+	rows, err := GetProdByIdQuery(prod_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not get product by id, check if id is correct."))
+		log.Println(err)
+		return
+	}
+
+	json.NewEncoder(res).Encode(ProductById{
+		Prod_id:        rows.Prod_id,
+		Prod_name:      rows.Prod_name,
+		Prod_line_name: rows.Prod_line_name,
+		Prod_desc:      rows.Prod_desc,
+		Prod_image:     rows.Prod_image,
+		Quan_in_stock:  rows.Quan_in_stock,
+		Buy_price:      rows.Buy_price,
+	})
+}
+
 func GetProducts(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	rows, err := db.Query(`SELECT
-		prod_id,
-		prod_name,
-		prod_line_name,
-		prod_vendor_id,
-		prod_desc,
-		prod_image,
-		quan_in_stock,
-		buy_price,
-		msrp
-		FROM products`)
+	rows, err := GetProductsQuery()
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			"Could not decode request body")
@@ -1179,49 +1187,6 @@ func GetProducts(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(products)
 }
 
-type ProductById struct {
-	Prod_id        int            `json:"prod_id"`
-	Prod_name      string         `json:"prod_name"`
-	Prod_line_name string         `json:"prod_line_name"`
-	Prod_desc      sql.NullString `json:"prod_desc"`
-	Prod_image     sql.NullString `json:"prod_image"`
-	Quan_in_stock  int            `json:"quan_in_stock"`
-	Buy_price      float64        `json:"buy_price"`
-}
-
-func GetProductById(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	prod_id := req.URL.Query().Get("id")
-	prod_id_int, err := strconv.ParseInt(prod_id, 10, 64)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			fmt.Sprintf("Could not parse id into int64, try again later."))
-		log.Println(err)
-		return
-	}
-	rows, err := GetProdById(prod_id_int)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			fmt.Sprintf("Could not get product by id, check if id is correct."))
-		log.Println(err)
-		return
-	}
-
-	json.NewEncoder(res).Encode(ProductById{
-		Prod_id:        rows.Prod_id,
-		Prod_name:      rows.Prod_name,
-		Prod_line_name: rows.Prod_line_name,
-		Prod_desc:      rows.Prod_desc,
-		Prod_image:     rows.Prod_image,
-		Quan_in_stock:  rows.Quan_in_stock,
-		Buy_price:      rows.Buy_price,
-	})
-}
-
-type BoughtProdById struct {
-	Quan_bought int `json:"quan_bought"`
-}
-
 func PutBoughtProductById(res http.ResponseWriter, req *http.Request) {
 	product := &BoughtProdById{}
 	res.Header().Set("Content-Type", "application/json")
@@ -1248,7 +1213,7 @@ func PutBoughtProductById(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, err = PutBoughtProdById(prod_id_int, product)
+	_, err = PutBoughtProdByIdQuery(prod_id_int, product)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error buying product, make sure bought quantity is lower or equal to quantity in stock."))
@@ -1308,10 +1273,10 @@ func PostProduct(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddProduct(product)
+	rows, err := AddProductQuery(product)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding product, make sure prod_vendor_id is also in database"))
+			fmt.Sprintf("Error adding product, make sure prod_vendor_id is in the database"))
 		log.Println(err)
 		return
 	}
@@ -1332,17 +1297,57 @@ type Customer struct {
 	Cred_limit float64       `json:"cred_limit"`
 }
 
+type CustomerAcc struct {
+	Cust_id    int           `json:"cust_id"`
+	Cust_fname string        `json:"cust_fname"`
+	Cust_lname string        `json:"cust_lname"`
+	Cust_email string        `json:"cust_email"`
+	Addr_id    sql.NullInt64 `json:"addr_id"`
+	Phone_num  string        `json:"phone_num"`
+}
+
+type CustomerRequest struct {
+	Cust_fname       string  `json:"cust_fname"`
+	Cust_lname       string  `json:"cust_lname"`
+	Cust_email       string  `json:"cust_email"`
+	Phone_num        string  `json:"phone_num"`
+	Addr_id          int     `json:"addr_id"`
+	Sales_rep_emp_id int     `json:"sales_rep_emp_id"`
+	Cred_limit       float64 `json:"cred_limit"`
+}
+
+func GetCustomerById(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id, try again later."))
+		log.Println(err)
+		return
+	}
+
+	cust, err := GetCustByIdQuery(cust_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not get customer by id, check if id is correct."))
+		log.Println(err)
+		return
+	}
+
+	json.NewEncoder(res).Encode(CustomerAcc{
+		Cust_id:    cust.Cust_id,
+		Cust_fname: cust.Cust_fname,
+		Cust_lname: cust.Cust_lname,
+		Cust_email: cust.Cust_email,
+		Addr_id:    cust.Addr_id,
+		Phone_num:  cust.Phone_num,
+	})
+}
+
 func GetCustomers(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	rows, err := db.Query(`SELECT
-		cust_id,
-		cust_fname,
-		cust_lname,
-		cust_email,
-		phone_num,
-		addr_id,
-		cred_limit
-		FROM customers`)
+	rows, err := GetCustomersQuery()
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			"Could not get customers, try again later")
@@ -1384,54 +1389,6 @@ func GetCustomers(res http.ResponseWriter, req *http.Request) {
 		})
 	}
 	json.NewEncoder(res).Encode(customers)
-}
-
-type CustomerAcc struct {
-	Cust_id    int           `json:"cust_id"`
-	Cust_fname string        `json:"cust_fname"`
-	Cust_lname string        `json:"cust_lname"`
-	Cust_email string        `json:"cust_email"`
-	Addr_id    sql.NullInt64 `json:"addr_id"`
-	Phone_num  string        `json:"phone_num"`
-}
-
-func GetCustomerById(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	cust_id := req.URL.Query().Get("id")
-	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			fmt.Sprintf("Could not parse id, try again later."))
-		log.Println(err)
-		return
-	}
-
-	cust, err := GetCustById(cust_id_int)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			fmt.Sprintf("Could not get customer by id, check if id is correct."))
-		log.Println(err)
-		return
-	}
-
-	json.NewEncoder(res).Encode(CustomerAcc{
-		Cust_id:    cust.Cust_id,
-		Cust_fname: cust.Cust_fname,
-		Cust_lname: cust.Cust_lname,
-		Cust_email: cust.Cust_email,
-		Addr_id:    cust.Addr_id,
-		Phone_num:  cust.Phone_num,
-	})
-}
-
-type CustomerRequest struct {
-	Cust_fname       string  `json:"cust_fname"`
-	Cust_lname       string  `json:"cust_lname"`
-	Cust_email       string  `json:"cust_email"`
-	Phone_num        string  `json:"phone_num"`
-	Addr_id          int     `json:"addr_id"`
-	Sales_rep_emp_id int     `json:"sales_rep_emp_id"`
-	Cred_limit       float64 `json:"cred_limit"`
 }
 
 func PostCustomer(res http.ResponseWriter, req *http.Request) {
@@ -1495,10 +1452,10 @@ func PostCustomer(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, err = AddCustomer(customer)
+	_, err = AddCustomerQuery(customer)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding customer, make sure addr_id is also in database"))
+			fmt.Sprintf("Error adding customer, make sure addr_id is in the database"))
 		log.Println(err)
 		return
 	}
@@ -1506,6 +1463,13 @@ func PostCustomer(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(OkResponse{
 		Message: fmt.Sprintf("Customer added successfully."),
 	})
+}
+
+type OrderByCustId struct {
+	Ord_id   int    `json:"ord_id"`
+	Status   string `json:"status"`
+	Comments string `json:"comments"`
+	Rating   int    `json:"rating"`
 }
 
 type Order struct {
@@ -1516,22 +1480,64 @@ type Order struct {
 	Rating   int            `json:"rating"`
 }
 
-type OrderByCustId struct {
-	Ord_id   int    `json:"ord_id"`
+type OrderRequest struct {
+	Cust_id  int    `json:"cust_id"`
 	Status   string `json:"status"`
 	Comments string `json:"comments"`
 	Rating   int    `json:"rating"`
 }
 
+func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id into int64, try again later."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := GetOrderByCustIdQuery(cust_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not get orders, try again later")
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	var orders []OrderByCustId
+	for rows.Next() {
+		var (
+			ord_id   int
+			cust_id  int
+			status   string
+			comments string
+			rating   int
+		)
+		if err := rows.Scan(
+			&ord_id,
+			&cust_id,
+			&status,
+			&comments,
+			&rating); err != nil {
+			log.Println(err)
+			return
+		}
+		orders = append(orders, OrderByCustId{
+			Ord_id:   ord_id,
+			Status:   status,
+			Comments: comments,
+			Rating:   rating,
+		})
+	}
+	json.NewEncoder(res).Encode(orders)
+}
+
 func GetOrders(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	rows, err := db.Query(`SELECT
-		ord_id,
-		cust_id,
-		status,
-		comments,
-		rating
-		FROM orders`)
+	rows, err := GetOrdersQuery()
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			"Could not get orders, try again later")
@@ -1569,68 +1575,6 @@ func GetOrders(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(orders)
 }
 
-func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	cust_id := req.URL.Query().Get("id")
-	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			fmt.Sprintf("Could not parse id into int64, try again later."))
-		log.Println(err)
-		return
-	}
-
-	rows, err := db.Query(`SELECT
-		ord_id,
-		cust_id,
-		status,
-		comments,
-		rating
-		FROM orders
-		WHERE cust_id = $1`, cust_id_int)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			"Could not get orders, try again later")
-		log.Println(err)
-		return
-	}
-	defer rows.Close()
-
-	var orders []OrderByCustId
-	for rows.Next() {
-		var (
-			ord_id   int
-			cust_id  int
-			status   string
-			comments string
-			rating   int
-		)
-		if err := rows.Scan(
-			&ord_id,
-			&cust_id,
-			&status,
-			&comments,
-			&rating); err != nil {
-			log.Println(err)
-			return
-		}
-		orders = append(orders, OrderByCustId{
-			Ord_id:   ord_id,
-			Status:   status,
-			Comments: comments,
-			Rating:   rating,
-		})
-	}
-	json.NewEncoder(res).Encode(orders)
-}
-
-type OrderRequest struct {
-	Cust_id  int    `json:"cust_id"`
-	Status   string `json:"status"`
-	Comments string `json:"comments"`
-	Rating   int    `json:"rating"`
-}
-
 func PostOrder(res http.ResponseWriter, req *http.Request) {
 	var order *OrderRequest
 	res.Header().Set("Content-Type", "application/json")
@@ -1661,10 +1605,10 @@ func PostOrder(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddOrder(order)
+	rows, err := AddOrderQuery(order)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding order, make sure cust_id is also in database"))
+			fmt.Sprintf("Error adding order, make sure cust_id is in the database"))
 		log.Println(err)
 		return
 	}
@@ -1683,6 +1627,14 @@ type Payment struct {
 	Ord_id         int       `json:"ord_id"`
 }
 
+type PaymentRequest struct {
+	Cust_id        int       `json:"cust_id"`
+	Payment_date   time.Time `json:"payment_date"`
+	Amount         float64   `json:"amount"`
+	Payment_status string    `json:"payment_status"`
+	Ord_id         int       `json:"ord_id"`
+}
+
 func GetPaymentsByCustId(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	cust_id := req.URL.Query().Get("id")
@@ -1694,15 +1646,7 @@ func GetPaymentsByCustId(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := db.Query(`SELECT
-		payment_id,
-		cust_id,
-		payment_date,
-		amount,
-		payment_status,
-		ord_id
-		FROM payments
-		WHERE cust_id = $1`, cust_id_int)
+	rows, err := GetPaymentsByCustIdQuery(cust_id_int)
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			"Could not get payments, try again later")
@@ -1741,14 +1685,6 @@ func GetPaymentsByCustId(res http.ResponseWriter, req *http.Request) {
 		})
 	}
 	json.NewEncoder(res).Encode(payments)
-}
-
-type PaymentRequest struct {
-	Cust_id        int       `json:"cust_id"`
-	Payment_date   time.Time `json:"payment_date"`
-	Amount         float64   `json:"amount"`
-	Payment_status string    `json:"payment_status"`
-	Ord_id         int       `json:"ord_id"`
 }
 
 func PostPayment(res http.ResponseWriter, req *http.Request) {
@@ -1803,10 +1739,10 @@ func PostPayment(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddPayment(payment)
+	rows, err := AddPaymentQuery(payment)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding payment, make sure cust_id is also in database"))
+			fmt.Sprintf("Error adding payment, make sure cust_id is in the database"))
 		log.Println(err)
 		return
 	}
@@ -1834,12 +1770,7 @@ func GetOrderDetailsByOrderId(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := db.Query(`SELECT
-		ord_id,
-		prod_id,
-		quan_ordered
-		FROM order_details
-		WHERE ord_id = $1`, order_id_int)
+	rows, err := GetOrderDetailsByOrderIdQuery(order_id_int)
 	if err != nil {
 		ErrorRes(res, http.StatusInternalServerError,
 			"Could not get order details, try again later")
@@ -1894,7 +1825,7 @@ func PostAddToCart(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	suc, err := AddToCart(cust_id_int, orderdetail)
+	suc, err := AddToCartQuery(cust_id_int, orderdetail)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest, fmt.Sprintf("Product or Customer ID invalid %v", err))
 		log.Println(err)
@@ -1962,7 +1893,7 @@ func PutOrderDetailQuantity(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := EditOrderDetailQuantity(order_id_int, prod_id_int, quantityOrderDetail.Quan_ordered)
+	rows, err := EditOrderDetailQuantityQuery(order_id_int, prod_id_int, quantityOrderDetail.Quan_ordered)
 	if rows == 0 {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error editing order detail quantity, make sure order_id and prod_id is in database"))
@@ -2021,11 +1952,11 @@ func PostOrderDetail(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddOrderDetail(orderDetail)
+	rows, err := AddOrderDetailQuery(orderDetail)
 	if err != nil {
 
 		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding order detail, make sure ord_id and prod_id are also in database"))
+			fmt.Sprintf("Error adding order detail, make sure ord_id and prod_id are in the database"))
 		log.Println(err)
 		return
 	}
@@ -2084,7 +2015,7 @@ func PostCustomerSignUp(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, err = SignCustomer(customerSignUp)
+	_, err = SignCustomerQuery(customerSignUp)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error adding customer, try again later."))
@@ -2123,7 +2054,7 @@ func PostCustomerLogIn(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = LogInCustomer(customerLogIn, customer)
+	err = LogInCustomerQuery(customerLogIn, customer)
 	if err != nil {
 		ErrorRes(res, http.StatusUnauthorized,
 			fmt.Sprintf("Incorrect email or password!"))
@@ -2169,10 +2100,10 @@ func PutCustAddr(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := AddCustAddr(cust_id_int, addCustAddr.Addr_id)
+	rows, err := AddCustAddrQuery(cust_id_int, addCustAddr.Addr_id)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding customer address, make sure addr_id is also in database"))
+			fmt.Sprintf("Error adding customer address, make sure addr_id is in the database"))
 		log.Println(err)
 		return
 	}
@@ -2232,7 +2163,7 @@ func PostEmployeeSignUp(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, err = SignEmployee(employeeSignUp)
+	_, err = SignEmployeeQuery(employeeSignUp)
 	if err != nil {
 		ErrorRes(res, http.StatusBadRequest,
 			fmt.Sprintf("Error adding employee, try again later."))
@@ -2271,7 +2202,7 @@ func PostEmpLogin(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = LogInEmployee(employeeLogin, employee)
+	err = LogInEmployeeQuery(employeeLogin, employee)
 	if err != nil {
 		ErrorRes(res, http.StatusUnauthorized,
 			fmt.Sprintf("Incorrect email or password!"))
@@ -2288,13 +2219,6 @@ func PostEmpLogin(res http.ResponseWriter, req *http.Request) {
 // EMPLOYEES
 // TODO: ADD A PUT ROUTE FOR EDITING EMPLOYEES
 // TODO: ADD A DELETE ROUTE FOR EDITING PRODUCTS
-
-// CUSTOMERS
-// TODO: ADD A PUT ROUTE TO EDIT CUSTOMER ADDRESS
-
-// ADDRESSES
-// TODO: ADD A PUT ROUTE FOR EDITING ADDRESSES
-// TODO: ADD A DELETE ROUTE
 
 // PRODUCTS
 // TODO: ADD A PUT ROUTE FOR EDITING PRODUCTS

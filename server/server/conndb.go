@@ -30,8 +30,6 @@ func ConnDB() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// TODO: ADD A WAY TO CLOSE CONNECTION AFTER QUERY
-	// defer db.Close()
 }
 
 func CreateSchema() {
@@ -165,71 +163,37 @@ func CreateSchema() {
 	}
 }
 
-func TestQuery() {
-	// WARNING: TEST DATA FOR TEST QUERY SELECT
-	_, err := db.Exec(`INSERT INTO addresses(
-			addr_line1,
-			city,
-			state,
-			postal_code,
-			country
-		)
-		VALUES (
-			'1234 A Avenue St.',
-			'Angeles',
-			'Pampanga',
-			'2010',
-			'PHL'
-		)`)
-	if err != nil {
-		panic(err)
-	}
-
-	// WARNING: TEST GET THE DATA FROM INSERTED QUERY
+func GetAddrQuery() (*sql.Rows, error) {
 	rows, err := db.Query(`SELECT
 		addr_id,
 		addr_line1,
+		addr_line2,
 		city,
 		state,
 		postal_code,
 		country
 		FROM addresses`)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var (
-			addr_id     int
-			addr_line1  string
-			city        string
-			state       string
-			postal_code string
-			country     string
-		)
-		if err := rows.Scan(
-			&addr_id,
-			&addr_line1,
-			&city,
-			&state,
-			&postal_code,
-			&country); err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("Address ID: %v \n", addr_id)
-		fmt.Printf("Address Line1: %v \n", addr_line1)
-		fmt.Printf("City: %v \n", city)
-		fmt.Printf("State: %v \n", state)
-		fmt.Printf("Postal Code: %v \n", postal_code)
-		fmt.Printf("Country: %v \n", country)
-	}
-	if err = rows.Err(); err != nil {
-		log.Fatal(err)
-	}
+	return rows, nil
 }
 
-func AddAddr(addr *AddrRequest) (int64, error) {
+func GetAddrByIDQuery(id int64) (AddrResponse, error) {
+	var addr AddrResponse
+	err := db.QueryRow(`SELECT * FROM addresses WHERE addr_id = $1`, id).Scan(
+		&addr.Addr_id,
+		&addr.Addr_line1,
+		&addr.Addr_line2,
+		&addr.City,
+		&addr.State,
+		&addr.Postal_code,
+		&addr.Country,
+	)
+	return addr, err
+}
+
+func AddAddrQuery(addr *AddrRequest) (int64, error) {
 	var id int64
 
 	err := db.QueryRow(`INSERT INTO addresses(
@@ -262,21 +226,7 @@ func AddAddr(addr *AddrRequest) (int64, error) {
 	return id, nil
 }
 
-func GetAddrByID(id int64) (AddrResponse, error) {
-	var addr AddrResponse
-	err := db.QueryRow(`SELECT * FROM addresses WHERE addr_id = $1`, id).Scan(
-		&addr.Addr_id,
-		&addr.Addr_line1,
-		&addr.Addr_line2,
-		&addr.City,
-		&addr.State,
-		&addr.Postal_code,
-		&addr.Country,
-	)
-	return addr, err
-}
-
-func EditAddr(addr *AddrRequest, addr_id int64) (int64, error) {
+func EditAddrQuery(addr *AddrRequest, addr_id int64) (int64, error) {
 	result, err := db.Exec(`UPDATE addresses SET
 		addr_line1 = $1,
 		addr_line2 = $2,
@@ -299,7 +249,7 @@ func EditAddr(addr *AddrRequest, addr_id int64) (int64, error) {
 	return rows, err
 }
 
-func DeleteAddrById(addr_id int64) (int64, error) {
+func DeleteAddrByIdQuery(addr_id int64) (int64, error) {
 	result, err := db.Exec(`DELETE FROM addresses WHERE addr_id = $1`, addr_id)
 	if err != nil {
 		return 0, err
@@ -308,7 +258,7 @@ func DeleteAddrById(addr_id int64) (int64, error) {
 	return rows, err
 }
 
-func AddOffice(office *OfficeRequest) (int64, error) {
+func AddOfficeQuery(office *OfficeRequest) (int64, error) {
 	var officeId int64
 
 	err := db.QueryRow(`INSERT INTO offices(
@@ -328,7 +278,19 @@ func AddOffice(office *OfficeRequest) (int64, error) {
 	return officeId, nil
 }
 
-func GetEmpById(id int64) (Employee, error) {
+func GetOfficesQuery() (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		office_id,
+		phone_num,
+		addr_id
+		FROM offices`)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func GetEmpByIdQuery(id int64) (Employee, error) {
 	var emp Employee
 	err := db.QueryRow(`SELECT
 		emp_id,
@@ -349,7 +311,22 @@ func GetEmpById(id int64) (Employee, error) {
 	return emp, err
 }
 
-func AddEmp(emp *EmployeeRequest) (int64, error) {
+func GetEmpsQuery() (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		emp_id,
+		emp_fname,
+		emp_lname,
+		emp_email,
+		office_id,
+		job_title
+		FROM employees`)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func AddEmpQuery(emp *EmployeeRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO employees (
 		emp_fname,
 		emp_lname,
@@ -375,7 +352,7 @@ func AddEmp(emp *EmployeeRequest) (int64, error) {
 	return id, err
 }
 
-func EditEmpOffice(emp_id int64, office_id int) (int64, error) {
+func EditEmpOfficeQuery(emp_id int64, office_id int) (int64, error) {
 	result, err := db.Exec(`UPDATE employees SET office_id = $1 WHERE emp_id = $2`,
 		office_id,
 		emp_id)
@@ -386,20 +363,7 @@ func EditEmpOffice(emp_id int64, office_id int) (int64, error) {
 	return id, err
 }
 
-func AddVendor(vendor *VendorRequest) (int64, error) {
-	result, err := db.Exec(`INSERT INTO vendors (vendor_name, vendor_email, vendor_phone_num, addr_id) VALUES ($1, $2, $3, $4)`,
-		vendor.Vendor_name,
-		vendor.Vendor_email,
-		vendor.Vendor_phone_num,
-		vendor.Addr_id)
-	if err != nil {
-		return 0, err
-	}
-	id, err := result.RowsAffected()
-	return id, err
-}
-
-func GetVendorById(id int64) (Vendor, error) {
+func GetVendorByIdQuery(id int64) (Vendor, error) {
 	var vendor Vendor
 	err := db.QueryRow(`SELECT
 		vendor_id,
@@ -415,7 +379,45 @@ func GetVendorById(id int64) (Vendor, error) {
 	return vendor, nil
 }
 
-func AddProductLine(productLine *ProductLineRequest) (int64, error) {
+func GetVendorsQuery() (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		vendor_id,
+		vendor_name,
+		vendor_email,
+		vendor_phone_num,
+		addr_id
+		FROM vendors`)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func AddVendorQuery(vendor *VendorRequest) (int64, error) {
+	result, err := db.Exec(`INSERT INTO vendors (vendor_name, vendor_email, vendor_phone_num, addr_id) VALUES ($1, $2, $3, $4)`,
+		vendor.Vendor_name,
+		vendor.Vendor_email,
+		vendor.Vendor_phone_num,
+		vendor.Addr_id)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.RowsAffected()
+	return id, err
+}
+
+func GetProductLinesQuery() (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		prod_line_name,
+		prod_line_desc
+		FROM product_lines`)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func AddProductLineQuery(productLine *ProductLineRequest) (int64, error) {
 	rows, err := db.Exec(`INSERT INTO product_lines (
 		prod_line_name,
 		prod_line_desc
@@ -432,7 +434,7 @@ func AddProductLine(productLine *ProductLineRequest) (int64, error) {
 	return id, err
 }
 
-func AddProduct(product *ProductRequest) (int64, error) {
+func AddProductQuery(product *ProductRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO products (
 		prod_name,
 		prod_line_name,
@@ -470,7 +472,7 @@ func AddProduct(product *ProductRequest) (int64, error) {
 	return id, err
 }
 
-func GetProdById(id int64) (Product, error) {
+func GetProdByIdQuery(id int64) (Product, error) {
 	var prod Product
 	err := db.QueryRow(`SELECT
 		prod_id,
@@ -494,8 +496,26 @@ func GetProdById(id int64) (Product, error) {
 	return prod, nil
 }
 
-func PutBoughtProdById(id int64, product *BoughtProdById) (int64, error) {
-	prod, err := GetProdById(id)
+func GetProductsQuery() (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		prod_id,
+		prod_name,
+		prod_line_name,
+		prod_vendor_id,
+		prod_desc,
+		prod_image,
+		quan_in_stock,
+		buy_price,
+		msrp
+		FROM products`)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func PutBoughtProdByIdQuery(id int64, product *BoughtProdById) (int64, error) {
+	prod, err := GetProdByIdQuery(id)
 	newQuan := prod.Quan_in_stock - product.Quan_bought
 
 	if product.Quan_bought > prod.Quan_in_stock {
@@ -514,7 +534,7 @@ func PutBoughtProdById(id int64, product *BoughtProdById) (int64, error) {
 	return rows, err
 }
 
-func GetCustById(id int64) (Customer, error) {
+func GetCustByIdQuery(id int64) (Customer, error) {
 	var cust Customer
 	err := db.QueryRow(`SELECT
 		cust_id,
@@ -532,7 +552,23 @@ func GetCustById(id int64) (Customer, error) {
 	return cust, nil
 }
 
-func AddCustomer(customer *CustomerRequest) (int64, error) {
+func GetCustomersQuery() (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		cust_id,
+		cust_fname,
+		cust_lname,
+		cust_email,
+		phone_num,
+		addr_id,
+		cred_limit
+		FROM customers`)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func AddCustomerQuery(customer *CustomerRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO customers (
 		cust_fname,
 		cust_lname,
@@ -564,7 +600,7 @@ func AddCustomer(customer *CustomerRequest) (int64, error) {
 	return id, err
 }
 
-func AddCustAddr(cust_id int64, addr_id int) (int64, error) {
+func AddCustAddrQuery(cust_id int64, addr_id int) (int64, error) {
 	var result sql.Result
 	var err error
 
@@ -589,7 +625,7 @@ func AddCustAddr(cust_id int64, addr_id int) (int64, error) {
 	return id, err
 }
 
-func SignCustomer(customer *CustomerSignUp) (int64, error) {
+func SignCustomerQuery(customer *CustomerSignUp) (int64, error) {
 	result, err := db.Exec(`INSERT INTO customers (
 		cust_fname,
 		cust_lname,
@@ -618,7 +654,36 @@ func SignCustomer(customer *CustomerSignUp) (int64, error) {
 	return id, err
 }
 
-func AddOrder(order *OrderRequest) (int64, error) {
+func GetOrderByCustIdQuery(cust_id int64) (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		ord_id,
+		cust_id,
+		status,
+		comments,
+		rating
+		FROM orders
+		WHERE cust_id = $1`, cust_id)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func GetOrdersQuery() (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		ord_id,
+		cust_id,
+		status,
+		comments,
+		rating
+		FROM orders`)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func AddOrderQuery(order *OrderRequest) (int64, error) {
 	var err error
 	var id int64
 	err = db.QueryRow(`INSERT INTO orders (
@@ -655,7 +720,23 @@ func CheckOutCartQuery(cust_id int64) (int64, error) {
 	return id, err
 }
 
-func AddPayment(payment *PaymentRequest) (int64, error) {
+func GetPaymentsByCustIdQuery(cust_id int64) (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		payment_id,
+		cust_id,
+		payment_date,
+		amount,
+		payment_status,
+		ord_id
+		FROM payments
+		WHERE cust_id = $1`, cust_id)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func AddPaymentQuery(payment *PaymentRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO payments (
 		cust_id,
 		payment_date,
@@ -681,7 +762,7 @@ func AddPayment(payment *PaymentRequest) (int64, error) {
 	return id, err
 }
 
-func AddOrderDetail(orderDetail *OrderDetailRequest) (int64, error) {
+func AddOrderDetailQuery(orderDetail *OrderDetailRequest) (int64, error) {
 	result, err := db.Exec(`INSERT INTO order_details (
 		ord_id,
 		prod_id,
@@ -701,7 +782,7 @@ func AddOrderDetail(orderDetail *OrderDetailRequest) (int64, error) {
 	return id, err
 }
 
-func CheckIfOrderPending(cust_id int64) int {
+func CheckIfOrderPendingQuery(cust_id int64) int {
 	var ord_id int
 	err := db.QueryRow(`SELECT ord_id FROM orders WHERE cust_id = $1 AND status = 'in cart'`, cust_id).Scan(&ord_id)
 
@@ -715,11 +796,11 @@ func CheckIfOrderPending(cust_id int64) int {
 	return ord_id
 }
 
-func AddToCart(cust_id int64, orderdetail CartOrderDetail) (string, error) {
-	ord_id := CheckIfOrderPending(cust_id)
+func AddToCartQuery(cust_id int64, orderdetail CartOrderDetail) (string, error) {
+	ord_id := CheckIfOrderPendingQuery(cust_id)
 
 	if ord_id == 0 {
-		newOrderID, err := AddOrder(&OrderRequest{
+		newOrderID, err := AddOrderQuery(&OrderRequest{
 			Cust_id:  int(cust_id),
 			Status:   "in cart",
 			Comments: "",
@@ -745,7 +826,7 @@ func AddToCart(cust_id int64, orderdetail CartOrderDetail) (string, error) {
 	return fmt.Sprintf("Successfully added product. %d rows affected", rows), nil
 }
 
-func EditOrderDetailQuantity(order_id int64, prod_id int64, quan_ordered int) (int64, error) {
+func EditOrderDetailQuantityQuery(order_id int64, prod_id int64, quan_ordered int) (int64, error) {
 	result, err := db.Exec(`UPDATE order_details
 		SET quan_ordered = $1
 		WHERE ord_id = $2 AND prod_id = $3`, quan_ordered, order_id, prod_id)
@@ -757,7 +838,20 @@ func EditOrderDetailQuantity(order_id int64, prod_id int64, quan_ordered int) (i
 	return rows, err
 }
 
-func OrderInCart(cust_id int64) (*sql.Rows, error) {
+func GetOrderDetailsByOrderIdQuery(order_id int64) (*sql.Rows, error) {
+	rows, err := db.Query(`SELECT
+		ord_id,
+		prod_id,
+		quan_ordered
+		FROM order_details
+		WHERE ord_id = $1`, order_id)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func OrderInCartQuery(cust_id int64) (*sql.Rows, error) {
 	rows, err := db.Query(`SELECT
 		o.ord_id,
 		p.prod_name as name,
@@ -775,7 +869,7 @@ func OrderInCart(cust_id int64) (*sql.Rows, error) {
 	return rows, nil
 }
 
-func OrderInPaid(cust_id int64) (*sql.Rows, error) {
+func OrderInPaidQuery(cust_id int64) (*sql.Rows, error) {
 	rows, err := db.Query(`SELECT
 		o.ord_id,
 		p.prod_name as name,
@@ -793,7 +887,7 @@ func OrderInPaid(cust_id int64) (*sql.Rows, error) {
 	return rows, nil
 }
 
-func LogInCustomer(clog *CustomerLogIn, cust *Customer) error {
+func LogInCustomerQuery(clog *CustomerLogIn, cust *Customer) error {
 	result, err := db.Query(`SELECT
 		cust_id,
 		cust_fname,
@@ -829,7 +923,7 @@ func LogInCustomer(clog *CustomerLogIn, cust *Customer) error {
 	return nil
 }
 
-func SignEmployee(employee *EmployeeSignUp) (int64, error) {
+func SignEmployeeQuery(employee *EmployeeSignUp) (int64, error) {
 	result, err := db.Exec(`INSERT INTO employees (
 		emp_fname,
 		emp_lname,
@@ -855,7 +949,7 @@ func SignEmployee(employee *EmployeeSignUp) (int64, error) {
 	return id, err
 }
 
-func LogInEmployee(clog *EmployeeLogin, emp *Employee) error {
+func LogInEmployeeQuery(clog *EmployeeLogin, emp *Employee) error {
 	result, err := db.Query(`SELECT
 		emp_id,
 		emp_fname,
