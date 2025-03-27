@@ -35,7 +35,7 @@ class _SignUpSellerState extends State<SignUpSeller> {
       return;
     }
 
-    final url = Uri.parse("http://localhost:3000/v1/emps/signup");
+    final url = Uri.parse("https://bazaroo.onrender.com/v1/emps/signup");
 
     final response = await http.post(
       url,

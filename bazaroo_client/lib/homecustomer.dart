@@ -21,7 +21,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List products = [];
-  final String baseUrl = "http://localhost:3000";
+  final String baseUrl = "https://bazaroo.onrender.com";
 
    @override
   void initState() {

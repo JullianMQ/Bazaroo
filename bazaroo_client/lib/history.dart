@@ -16,7 +16,7 @@ class _PurchaseHistoryState extends State<PurchaseHistory> {
   List products = [];
 
   Future<void> fetchProducts() async {
-    final url = Uri.parse('http://localhost:3000/v1/orders/paid/?id=${widget.userId}');
+    final url = Uri.parse('https://bazaroo.onrender.com/v1/orders/paid/?id=${widget.userId}');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -68,7 +68,7 @@ class _PurchaseHistoryState extends State<PurchaseHistory> {
               itemCount: products.length,
               itemBuilder: (context, index) {
                 final product = products[index];
-                String imageUrl = "http://localhost:3000${product['prod_image']['String']}";
+                String imageUrl = "https://bazaroo.onrender.com${product['prod_image']['String']}";
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),

@@ -17,7 +17,7 @@ class _LoginSellerState extends State<LoginSeller> {
   final TextEditingController passwordController = TextEditingController();
 
   Future<void> sendPostRequest() async {
-    final url = Uri.parse("http://localhost:3000/v1/emps/login");
+    final url = Uri.parse("https://bazaroo.onrender.com/v1/emps/login");
 
     try {
       final response = await http.post(
@@ -34,7 +34,7 @@ class _LoginSellerState extends State<LoginSeller> {
         if (response.statusCode == 200) {
           final String userId = responseData["message"].toString();
 
-          http.get(Uri.parse("http://localhost:3000/v1/emps/?id=$userId")).then((res) {
+          http.get(Uri.parse("https://bazaroo.onrender.com/v1/emps/?id=$userId")).then((res) {
             final responseReg = jsonDecode(res.body);
             bool isRegistered = responseReg['message'] == "true";
             setState(() {

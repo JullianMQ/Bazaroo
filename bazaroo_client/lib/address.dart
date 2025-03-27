@@ -18,7 +18,7 @@ class _AddressScreenState extends State<AddressScreen> {
   bool isLoading = true;
 
   Future<void> updId() async {
-    final putUrl = Uri.parse('http://localhost:3000/v1/customers/addr/?id=${widget.userId}');
+    final putUrl = Uri.parse('https://bazaroo.onrender.com/v1/customers/addr/?id=${widget.userId}');
       http.put(putUrl, headers: {"Content-Type": "application/json"},
         body: jsonEncode({"addr_id":0}),
       );
@@ -27,7 +27,7 @@ class _AddressScreenState extends State<AddressScreen> {
   Future<void> delAddresses(String id) async {
     try {
       updId();
-      final delUrl = Uri.parse('http://localhost:3000/v1/addr/?id=$id');
+      final delUrl = Uri.parse('https://bazaroo.onrender.com/v1/addr/?id=$id');
       final response = await http.delete(delUrl);
 
       if (response.statusCode == 201) {
@@ -45,7 +45,7 @@ class _AddressScreenState extends State<AddressScreen> {
 
 
   Future<void> fetchCustomers() async {
-    final url = Uri.parse('http://localhost:3000/v1/customers/?id=${widget.userId}');
+    final url = Uri.parse('https://bazaroo.onrender.com/v1/customers/?id=${widget.userId}');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -69,7 +69,7 @@ class _AddressScreenState extends State<AddressScreen> {
   }
 
   Future<void> fetchAddresses(int addrId) async {
-    final url = Uri.parse('http://localhost:3000/v1/addr/?id=$addrId');
+    final url = Uri.parse('https://bazaroo.onrender.com/v1/addr/?id=$addrId');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {

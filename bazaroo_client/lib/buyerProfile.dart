@@ -26,7 +26,7 @@ class _BuyerProfileState extends State<BuyerProfile> {
   }
 
   Future<void> fetchUserData() async {
-  final url = Uri.parse('http://localhost:3000/v1/customers/?id=${widget.userId}');
+  final url = Uri.parse('https://bazaroo.onrender.com/v1/customers/?id=${widget.userId}');
   try {
     final response = await http.get(url);
     if (response.statusCode == 200) {

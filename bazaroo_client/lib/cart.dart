@@ -13,7 +13,7 @@ class Cart extends StatefulWidget {
 }
 
 class _CartState extends State<Cart> {
-  final String baseUrl = "http://localhost:3000";
+  final String baseUrl = "https://bazaroo.onrender.com";
   List<dynamic> products = [];
 
   @override

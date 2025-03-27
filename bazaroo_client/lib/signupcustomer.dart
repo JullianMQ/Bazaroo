@@ -28,7 +28,7 @@ class _SignUpCustomerState extends State<SignUpCustomer> {
   }
 
   Future<void> _signUp() async {
-    final url = Uri.parse("http://localhost:3000/v1/customers/signup");
+    final url = Uri.parse("https://bazaroo.onrender.com/v1/customers/signup");
 
     final response = await http.post(
       url,

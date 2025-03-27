@@ -24,7 +24,7 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   Future<void> fetchProducts() async {
-    final url = Uri.parse('http://localhost:3000/v1/products');
+    final url = Uri.parse('https://bazaroo.onrender.com/v1/products');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -84,7 +84,7 @@ class _ProductsPageState extends State<ProductsPage> {
                 itemCount: products.length,
                 itemBuilder: (context, index) {
                   final product = products[index];
-                  String imageUrl = "http://localhost:3000/${product['prod_image']['String']}";
+                  String imageUrl = "https://bazaroo.onrender.com/${product['prod_image']['String']}";
                   return GestureDetector(
                     onTap: () {
                       Navigator.push(

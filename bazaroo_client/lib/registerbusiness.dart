@@ -39,7 +39,7 @@ class _RegisterBusinessState extends State<RegisterBusiness> {
   }
 
   Future<void> addOfficeId(int id) async {
-    final url = Uri.parse("http://localhost:3000/v1/emps/?id=${widget.userId}");
+    final url = Uri.parse("https://bazaroo.onrender.com/v1/emps/?id=${widget.userId}");
 
     try {
       final response = await http.put(
@@ -62,7 +62,7 @@ class _RegisterBusinessState extends State<RegisterBusiness> {
   }
 
   Future<void> addAddrId(int id) async {
-    final url = Uri.parse("http://localhost:3000/v1/offices");
+    final url = Uri.parse("https://bazaroo.onrender.com/v1/offices");
 
     try {
       final res = await http.post(
@@ -106,7 +106,7 @@ class _RegisterBusinessState extends State<RegisterBusiness> {
       errorMessage = null;
     });
 
-    final url = Uri.parse("http://localhost:3000/v1/addr");
+    final url = Uri.parse("https://bazaroo.onrender.com/v1/addr");
 
     try {
       final response = await http.post(

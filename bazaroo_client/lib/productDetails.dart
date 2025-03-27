@@ -14,7 +14,7 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  final String baseUrl = "http://localhost:3000";
+  final String baseUrl = "https://bazaroo.onrender.com";
   bool isLoading = false; 
   int quantity = 1;
   Map<String, dynamic> product = {};

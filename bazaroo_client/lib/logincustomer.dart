@@ -16,7 +16,7 @@ class _LoginCustomerState extends State<LoginCustomer> {
   final TextEditingController passwordController = TextEditingController();
 
   Future<void> sendPostRequest() async {
-    final url = Uri.parse("http://localhost:3000/v1/customers/login");
+    final url = Uri.parse("https://bazaroo.onrender.com/v1/customers/login");
 
     try {
       final response = await http.post(

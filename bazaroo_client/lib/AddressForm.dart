@@ -25,7 +25,7 @@ class _NewAddressState extends State<AddressForm> {
   String? errorMessage;
 
   Future<void> updateAddr() async {
-    final url = Uri.parse("http://localhost:3000/v1/addr/?id=${widget.addrId}");
+    final url = Uri.parse("https://bazaroo.onrender.com/v1/addr/?id=${widget.addrId}");
     http.put(url, headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "addr_line1": addressLine1Controller.text,
@@ -40,7 +40,7 @@ class _NewAddressState extends State<AddressForm> {
   }
 
   Future<void> addId(int message) async {
-      final putUrl = Uri.parse('http://localhost:3000/v1/customers/addr/?id=${widget.userId}');
+      final putUrl = Uri.parse('https://bazaroo.onrender.com/v1/customers/addr/?id=${widget.userId}');
       http.put(putUrl, headers: {"Content-Type": "application/json"},
         body: jsonEncode({"addr_id":message}),
       );
@@ -57,7 +57,7 @@ class _NewAddressState extends State<AddressForm> {
       errorMessage = null;
     });
 
-    final url = Uri.parse("http://localhost:3000/v1/addr");
+    final url = Uri.parse("https://bazaroo.onrender.com/v1/addr");
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
