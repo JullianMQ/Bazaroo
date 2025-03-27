@@ -6,62 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/mail"
-	"regexp"
-	"slices"
 	"strconv"
 	"time"
 )
-
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
-
-type OkResponse struct {
-	Message string `json:"message"`
-}
-
-func ContainsEmpty(s []string) bool {
-	return slices.Contains(s, "")
-}
-
-func ContainsZero(v any) bool {
-	switch values := v.(type) {
-	case []int:
-		return containsInt(values, 0)
-	case []float64:
-		return containsFloat(values, 0.0)
-	case []any:
-		for _, value := range values {
-			if value == 0 {
-				return true
-			}
-		}
-		for _, value := range values {
-			if value == 0.0 {
-				return true
-			}
-		}
-		return false
-	default:
-		return false
-	}
-}
-
-func containsInt(v []int, target int) bool {
-	return slices.Contains(v, target)
-}
-
-func containsFloat(v []float64, target float64) bool {
-	return slices.Contains(v, target)
-}
-
-func ErrorRes(res http.ResponseWriter, status int, mess string) {
-	res.WriteHeader(status)
-	json.NewEncoder(res).Encode(ErrorResponse{
-		Error: mess,
-	})
-}
 
 func GetRoot(res http.ResponseWriter, req *http.Request) {
 	myMess := "Message"
@@ -69,317 +16,7 @@ func GetRoot(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(myMess)
 }
 
-func isEmailValid(email string) bool {
-	if _, err := mail.ParseAddress(email); err != nil {
-		return false
-	}
-	return true
-}
-
-func isAddrIdInDb(addr_id int) bool {
-	rows, err := db.Query(`SELECT
-		addr_id
-		FROM addresses
-		WHERE addr_id = $1`, addr_id)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var addr_id int
-		if err := rows.Scan(&addr_id); err != nil {
-			log.Println(err)
-		}
-		if addr_id == addr_id {
-			return true
-		}
-	}
-	return false
-}
-
-func isEmailInDb(email string, ut string) bool {
-	var rows *sql.Rows
-	var err error
-
-	switch ut {
-	case "customer":
-		rows, err = db.Query(`SELECT
-			cust_email
-			FROM customers
-			WHERE cust_email = $1`, email)
-	case "employee":
-		rows, err = db.Query(`SELECT
-			emp_email
-			FROM employees
-			WHERE emp_email = $1`, email)
-	case "vendor":
-		rows, err = db.Query(`SELECT
-			vendor_email
-			FROM vendors
-			WHERE vendor_email = $1`, email)
-	default:
-		panic("Invalid user type")
-	}
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var emp_email string
-		if err := rows.Scan(&emp_email); err != nil {
-			log.Println(err)
-		}
-		if emp_email == email {
-			return true
-		}
-	}
-	return false
-}
-
-func isEmpIdInDb(emp_id int) bool {
-	rows, err := db.Query(`SELECT
-		emp_id
-		FROM employees
-		WHERE emp_id = $1`, emp_id)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var emp_id int
-		if err := rows.Scan(&emp_id); err != nil {
-			log.Println(err)
-		}
-		if emp_id == emp_id {
-			return true
-		}
-	}
-	return false
-}
-
-func isProdLineInDb(prod_line string) bool {
-	rows, err := db.Query(`SELECT
-		prod_line_name
-		FROM product_lines
-		WHERE prod_line_name = $1`, prod_line)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var prod_line_name string
-		if err := rows.Scan(&prod_line_name); err != nil {
-			log.Println(err)
-		}
-		if prod_line_name == prod_line {
-			return true
-		}
-	}
-	return false
-}
-
-func isPhoneValid(phone_num string) bool {
-	re := regexp.MustCompile(`^09\d{9}$`)
-	return re.MatchString(phone_num)
-}
-
-func CustomerIdInDb(cust_id int) bool {
-	rows, err := db.Query(`SELECT
-		cust_id
-		FROM customers
-		WHERE cust_id = $1`, cust_id)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var cust_id int
-		if err := rows.Scan(&cust_id); err != nil {
-			log.Println(err)
-		}
-		if cust_id == cust_id {
-			return true
-		}
-	}
-	return false
-}
-
-func isOrderIdInDb(order_id int) bool {
-	rows, err := db.Query(`SELECT
-		ord_id
-		FROM orders
-		WHERE ord_id = $1`, order_id)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var ord_id int
-		if err := rows.Scan(&ord_id); err != nil {
-			log.Println(err)
-		}
-		if ord_id == order_id {
-			return true
-		}
-	}
-	return false
-}
-
-type OrdersInCart struct {
-	Ord_id       int            `json:"ord_id"`
-	Prod_name    string         `json:"prod_name"`
-	Prod_id      int            `json:"prod_id"`
-	Prod_image   sql.NullString `json:"prod_image"`
-	Price        float64        `json:"price"`
-	Quan_ordered int            `json:"quan_ordered"`
-}
-
-func GetOrderInCart(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	cust_id := req.URL.Query().Get("id")
-	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
-	if err != nil {
-		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Could not parse id into int64."))
-		log.Println(err)
-		return
-	}
-
-	rows, err := OrderInCartQuery(cust_id_int)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			"Could not get order in cart, try again later")
-		log.Println(err)
-		return
-	}
-	defer rows.Close()
-
-	orderInCart := []OrdersInCart{}
-	for rows.Next() {
-		var (
-			ord_id     int
-			prod_name  string
-			prod_id    int
-			prod_image sql.NullString
-			quantity   int
-			price      float64
-		)
-		if err := rows.Scan(
-			&ord_id,
-			&prod_name,
-			&prod_id,
-			&prod_image,
-			&quantity,
-			&price,
-		); err != nil {
-			log.Println(err)
-		}
-		orderInCart = append(orderInCart, OrdersInCart{
-			Ord_id:    ord_id,
-			Prod_name: prod_name,
-			Prod_id:   prod_id,
-			Prod_image: sql.NullString{
-				String: fmt.Sprintf("/v1/images/%s", prod_image.String),
-				Valid:  prod_image.Valid,
-			},
-			Price:        price,
-			Quan_ordered: quantity,
-		})
-	}
-	json.NewEncoder(res).Encode(orderInCart)
-}
-
-type PaidOrder struct {
-	Ord_id       int            `json:"ord_id"`
-	Prod_name    string         `json:"prod_name"`
-	Prod_id      int            `json:"prod_id"`
-	Prod_image   sql.NullString `json:"prod_image"`
-	Price        float64        `json:"price"`
-	Quan_ordered int            `json:"quan_ordered"`
-}
-
-func GetOrderInPaid(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	cust_id := req.URL.Query().Get("id")
-	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
-	if err != nil {
-		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Could not parse id into int64."))
-		log.Println(err)
-		return
-	}
-
-	rows, err := OrderInPaidQuery(cust_id_int)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			"Could not get order in paid, try again later")
-		log.Println(err)
-		return
-	}
-	defer rows.Close()
-
-	orderPaid := []PaidOrder{}
-	for rows.Next() {
-		var (
-			ord_id     int
-			prod_name  string
-			prod_id    int
-			prod_image sql.NullString
-			quantity   int
-			price      float64
-		)
-		if err := rows.Scan(
-			&ord_id,
-			&prod_name,
-			&prod_id,
-			&prod_image,
-			&quantity,
-			&price,
-		); err != nil {
-			log.Println(err)
-		}
-		orderPaid = append(orderPaid, PaidOrder{
-			Ord_id:    ord_id,
-			Prod_name: prod_name,
-			Prod_id:   prod_id,
-			Prod_image: sql.NullString{
-				String: fmt.Sprintf("/v1/images/%s", prod_image.String),
-				Valid:  prod_image.Valid},
-			Price:        price * float64(quantity),
-			Quan_ordered: quantity,
-		})
-	}
-	json.NewEncoder(res).Encode(orderPaid)
-}
-
-func isProdIdInDb(prod_id int) bool {
-	rows, err := db.Query(`SELECT
-		prod_id
-		FROM products
-		WHERE prod_id = $1`, prod_id)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var prod_id int
-		if err := rows.Scan(&prod_id); err != nil {
-			log.Println(err)
-		}
-		if prod_id == prod_id {
-			return true
-		}
-	}
-	return false
-}
-
+// =====================================ADDRESSES========================================
 type AddrRequest struct {
 	Addr_line1  string `json:"addr_line1"`
 	Addr_line2  string `json:"addr_line2"`
@@ -602,7 +239,9 @@ func DeleteAddr(res http.ResponseWriter, req *http.Request) {
 		Message: fmt.Sprintf("Address deleted successfully. %d rows affected", rows),
 	})
 }
+// ========================================ADDRESSES========================================
 
+// =====================================OFFICE========================================
 type Office struct {
 	Office_id int    `json:"office_id"`
 	Phone_num string `json:"phone_num"`
@@ -692,7 +331,9 @@ func PostOffice(res http.ResponseWriter, req *http.Request) {
 		Message: fmt.Sprintf("%d", office_id),
 	})
 }
+// ========================================OFFICE========================================
 
+// =====================================EMPLOYEES=====================================
 type Employee struct {
 	Emp_id    int           `json:"emp_id"`
 	Emp_fname string        `json:"emp_fname"`
@@ -712,6 +353,19 @@ type EmployeeRequest struct {
 	Emp_email string `json:"emp_email"`
 	Office_id int    `json:"office_id"`
 	Job_title string `json:"job_title"`
+}
+
+type EmployeeSignUp struct {
+	First_name string `json:"first_name"`
+	Last_name  string `json:"last_name"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Job_title  string `json:"job_title"`
+}
+
+type EmployeeLogin struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func GetEmpId(res http.ResponseWriter, req *http.Request) {
@@ -877,6 +531,96 @@ func PostEmp(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
+func PostEmployeeSignUp(res http.ResponseWriter, req *http.Request) {
+	var employeeSignUp *EmployeeSignUp
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&employeeSignUp)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		employeeSignUp.First_name,
+		employeeSignUp.Last_name,
+		employeeSignUp.Email,
+		employeeSignUp.Password,
+		employeeSignUp.Job_title}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"first_name, last_name, email, password, job_title cannot be empty")
+		return
+	}
+
+	if len(employeeSignUp.Password) < 8 {
+		ErrorRes(res, http.StatusBadRequest,
+			"password must be at least 8 characters")
+		return
+	}
+
+	if isEmailInDb(employeeSignUp.Email, "employee") {
+		ErrorRes(res, http.StatusBadRequest,
+			"email is already in use")
+		return
+	}
+
+	if !isEmailValid(employeeSignUp.Email) {
+		ErrorRes(res, http.StatusBadRequest,
+			"email is invalid")
+		return
+	}
+
+	_, err = SignEmployeeQuery(employeeSignUp)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding employee, try again later."))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Employee added successfully."),
+	})
+}
+
+func PostEmpLogin(res http.ResponseWriter, req *http.Request) {
+	var employeeLogin *EmployeeLogin
+	employee := &Employee{}
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&employeeLogin)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		employeeLogin.Email,
+		employeeLogin.Password}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"email, password cannot be empty")
+		return
+	}
+
+	err = LogInEmployeeQuery(employeeLogin, employee)
+	if err != nil {
+		ErrorRes(res, http.StatusUnauthorized,
+			fmt.Sprintf("Incorrect email or password!"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("%d", employee.Emp_id),
+	})
+}
+// =====================================EMPLOYEES=====================================
+
+// =====================================VENDOR=====================================
 type Vendor struct {
 	Vendor_id        int    `json:"vendor_id"`
 	Vendor_name      string `json:"vendor_name"`
@@ -1005,7 +749,9 @@ func PostVendor(res http.ResponseWriter, req *http.Request) {
 		Message: fmt.Sprintf("Vendor added successfully. %d rows affected", rows),
 	})
 }
+// =====================================VENDOR=====================================
 
+// =====================================PRODUCT LINE=====================================
 type ProductLine struct {
 	Prod_line_name string         `json:"prod_line_name"`
 	Prod_line_desc sql.NullString `json:"prod_line_desc"`
@@ -1077,6 +823,18 @@ func PostProductLine(res http.ResponseWriter, req *http.Request) {
 		Message: fmt.Sprintf("Product line added successfully. %d rows affected", rows),
 	})
 }
+// =====================================PRODUCT LINE=====================================
+
+// =====================================PRODUCT=====================================
+type ProductById struct {
+	Prod_id        int            `json:"prod_id"`
+	Prod_name      string         `json:"prod_name"`
+	Prod_line_name string         `json:"prod_line_name"`
+	Prod_desc      sql.NullString `json:"prod_desc"`
+	Prod_image     sql.NullString `json:"prod_image"`
+	Quan_in_stock  int            `json:"quan_in_stock"`
+	Buy_price      float64        `json:"buy_price"`
+}
 
 type Product struct {
 	Prod_id        int            `json:"prod_id"`
@@ -1090,14 +848,16 @@ type Product struct {
 	Msrp           float64        `json:"msrp"`
 }
 
-type ProductById struct {
-	Prod_id        int            `json:"prod_id"`
-	Prod_name      string         `json:"prod_name"`
-	Prod_line_name string         `json:"prod_line_name"`
-	Prod_desc      sql.NullString `json:"prod_desc"`
-	Prod_image     sql.NullString `json:"prod_image"`
-	Quan_in_stock  int            `json:"quan_in_stock"`
-	Buy_price      float64        `json:"buy_price"`
+type ProductRequest struct {
+	Prod_name      string  `json:"prod_name"`
+	Prod_line_name string  `json:"prod_line_name"`
+	Prod_vendor_id int     `json:"prod_vendor_id"`
+	Prod_desc      string  `json:"prod_desc"`
+	Prod_image     string  `json:"prod_image"`
+	Quan_in_stock  int     `json:"quan_in_stock"`
+	Buy_price      float64 `json:"buy_price"`
+	Msrp           float64 `json:"msrp"`
+	Office_id      float64 `json:"office_id"`
 }
 
 type BoughtProdById struct {
@@ -1227,18 +987,6 @@ func PutBoughtProductById(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
-type ProductRequest struct {
-	Prod_name      string  `json:"prod_name"`
-	Prod_line_name string  `json:"prod_line_name"`
-	Prod_vendor_id int     `json:"prod_vendor_id"`
-	Prod_desc      string  `json:"prod_desc"`
-	Prod_image     string  `json:"prod_image"`
-	Quan_in_stock  int     `json:"quan_in_stock"`
-	Buy_price      float64 `json:"buy_price"`
-	Msrp           float64 `json:"msrp"`
-	Office_id      float64 `json:"office_id"`
-}
-
 func PostProduct(res http.ResponseWriter, req *http.Request) {
 	var product *ProductRequest
 	res.Header().Set("Content-Type", "application/json")
@@ -1286,7 +1034,9 @@ func PostProduct(res http.ResponseWriter, req *http.Request) {
 		Message: fmt.Sprintf("Product added successfully. %d rows affected", rows),
 	})
 }
+// =====================================PRODUCT=====================================
 
+// =====================================CUSTOMERS========================================
 type Customer struct {
 	Cust_id    int           `json:"cust_id"`
 	Cust_fname string        `json:"cust_fname"`
@@ -1314,6 +1064,23 @@ type CustomerRequest struct {
 	Addr_id          int     `json:"addr_id"`
 	Sales_rep_emp_id int     `json:"sales_rep_emp_id"`
 	Cred_limit       float64 `json:"cred_limit"`
+}
+
+type CustomerSignUp struct {
+	First_name string  `json:"first_name"`
+	Last_name  string  `json:"last_name"`
+	Email      string  `json:"email"`
+	Password   string  `json:"password"`
+	Cred_limit float64 `json:"cred_limit"`
+}
+
+type CustomerLogIn struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type CustAddr struct {
+	Addr_id int `json:"addr_id"`
 }
 
 func GetCustomerById(res http.ResponseWriter, req *http.Request) {
@@ -1465,6 +1232,138 @@ func PostCustomer(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
+func PostCustomerSignUp(res http.ResponseWriter, req *http.Request) {
+	var customerSignUp *CustomerSignUp
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&customerSignUp)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		customerSignUp.First_name,
+		customerSignUp.Last_name,
+		customerSignUp.Email,
+		customerSignUp.Password}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"first_name, last_name, email, password cannot be empty")
+		return
+	}
+
+	if len(customerSignUp.Password) < 8 {
+		ErrorRes(res, http.StatusBadRequest,
+			"password must be at least 8 characters")
+		return
+	}
+
+	if isEmailInDb(customerSignUp.Email, "customer") {
+		ErrorRes(res, http.StatusBadRequest,
+			"email is already in use")
+		return
+	}
+
+	if !isEmailValid(customerSignUp.Email) {
+		ErrorRes(res, http.StatusBadRequest,
+			"email is invalid")
+		return
+	}
+
+	_, err = SignCustomerQuery(customerSignUp)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding customer, try again later."))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Customer added successfully."),
+	})
+}
+
+func PostCustomerLogIn(res http.ResponseWriter, req *http.Request) {
+	var customerLogIn *CustomerLogIn
+	customer := &Customer{}
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&customerLogIn)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if ContainsEmpty([]string{
+		customerLogIn.Email,
+		customerLogIn.Password}) {
+		ErrorRes(res, http.StatusBadRequest,
+			"email, password cannot be empty")
+		return
+	}
+
+	err = LogInCustomerQuery(customerLogIn, customer)
+	if err != nil {
+		ErrorRes(res, http.StatusUnauthorized,
+			fmt.Sprintf("Incorrect email or password!"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("%d", customer.Cust_id),
+	})
+}
+
+func PutCustAddr(res http.ResponseWriter, req *http.Request) {
+	var addCustAddr *CustAddr
+	res.Header().Set("Content-Type", "application/json")
+	err := json.NewDecoder(req.Body).Decode(&addCustAddr)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not decode request body")
+		log.Println(err)
+		return
+	}
+
+	if addCustAddr.Addr_id != 0 {
+		if !isAddrIdInDb(addCustAddr.Addr_id) {
+			ErrorRes(res, http.StatusBadRequest,
+				"addr_id is invalid")
+			return
+		}
+	}
+
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			fmt.Sprintf("Could not parse id, try again later."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := AddCustAddrQuery(cust_id_int, addCustAddr.Addr_id)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Error adding customer address, make sure addr_id is in the database"))
+		log.Println(err)
+		return
+	}
+
+	res.WriteHeader(http.StatusCreated)
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Customer address added successfully. %d rows affected", rows),
+	})
+}
+
+// ========================================CUSTOMERS========================================
+
+// =====================================ORDERS=====================================
 type OrderByCustId struct {
 	Ord_id   int    `json:"ord_id"`
 	Status   string `json:"status"`
@@ -1485,6 +1384,24 @@ type OrderRequest struct {
 	Status   string `json:"status"`
 	Comments string `json:"comments"`
 	Rating   int    `json:"rating"`
+}
+
+type OrdersInCart struct {
+	Ord_id       int            `json:"ord_id"`
+	Prod_name    string         `json:"prod_name"`
+	Prod_id      int            `json:"prod_id"`
+	Prod_image   sql.NullString `json:"prod_image"`
+	Price        float64        `json:"price"`
+	Quan_ordered int            `json:"quan_ordered"`
+}
+
+type PaidOrder struct {
+	Ord_id       int            `json:"ord_id"`
+	Prod_name    string         `json:"prod_name"`
+	Prod_id      int            `json:"prod_id"`
+	Prod_image   sql.NullString `json:"prod_image"`
+	Price        float64        `json:"price"`
+	Quan_ordered int            `json:"quan_ordered"`
 }
 
 func GetOrderByCustId(res http.ResponseWriter, req *http.Request) {
@@ -1618,6 +1535,140 @@ func PostOrder(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
+func GetOrderInCart(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Could not parse id into int64."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := OrderInCartQuery(cust_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not get order in cart, try again later")
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	orderInCart := []OrdersInCart{}
+	for rows.Next() {
+		var (
+			ord_id     int
+			prod_name  string
+			prod_id    int
+			prod_image sql.NullString
+			quantity   int
+			price      float64
+		)
+		if err := rows.Scan(
+			&ord_id,
+			&prod_name,
+			&prod_id,
+			&prod_image,
+			&quantity,
+			&price,
+		); err != nil {
+			log.Println(err)
+		}
+		orderInCart = append(orderInCart, OrdersInCart{
+			Ord_id:    ord_id,
+			Prod_name: prod_name,
+			Prod_id:   prod_id,
+			Prod_image: sql.NullString{
+				String: fmt.Sprintf("/v1/images/%s", prod_image.String),
+				Valid:  prod_image.Valid,
+			},
+			Price:        price,
+			Quan_ordered: quantity,
+		})
+	}
+	json.NewEncoder(res).Encode(orderInCart)
+}
+
+func GetOrderInPaid(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
+	if err != nil {
+		ErrorRes(res, http.StatusBadRequest,
+			fmt.Sprintf("Could not parse id into int64."))
+		log.Println(err)
+		return
+	}
+
+	rows, err := OrderInPaidQuery(cust_id_int)
+	if err != nil {
+		ErrorRes(res, http.StatusInternalServerError,
+			"Could not get order in paid, try again later")
+		log.Println(err)
+		return
+	}
+	defer rows.Close()
+
+	orderPaid := []PaidOrder{}
+	for rows.Next() {
+		var (
+			ord_id     int
+			prod_name  string
+			prod_id    int
+			prod_image sql.NullString
+			quantity   int
+			price      float64
+		)
+		if err := rows.Scan(
+			&ord_id,
+			&prod_name,
+			&prod_id,
+			&prod_image,
+			&quantity,
+			&price,
+		); err != nil {
+			log.Println(err)
+		}
+		orderPaid = append(orderPaid, PaidOrder{
+			Ord_id:    ord_id,
+			Prod_name: prod_name,
+			Prod_id:   prod_id,
+			Prod_image: sql.NullString{
+				String: fmt.Sprintf("/v1/images/%s", prod_image.String),
+				Valid:  prod_image.Valid},
+			Price:        price * float64(quantity),
+			Quan_ordered: quantity,
+		})
+	}
+	json.NewEncoder(res).Encode(orderPaid)
+}
+
+func CheckOutCart(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	cust_id := req.URL.Query().Get("id")
+	cust_id_int, err := strconv.Atoi(cust_id)
+	if err != nil {
+		json.NewEncoder(res).Encode(ErrorResponse{
+			Error: "Invalid Customer ID",
+		})
+		return
+	}
+
+	id, err := CheckOutCartQuery(int64(cust_id_int))
+	if err != nil {
+		json.NewEncoder(res).Encode(ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+	json.NewEncoder(res).Encode(OkResponse{
+		Message: fmt.Sprintf("Order ID: %d", id),
+	})
+}
+// =====================================ORDERS=====================================
+
+// =====================================PAYMENTS=====================================
 type Payment struct {
 	Payment_id     int       `json:"payment_id"`
 	Cust_id        int       `json:"cust_id"`
@@ -1752,7 +1803,9 @@ func PostPayment(res http.ResponseWriter, req *http.Request) {
 		Message: fmt.Sprintf("Payment added successfully. %d rows affected", rows),
 	})
 }
+// =====================================PAYMENTS=====================================
 
+// =====================================ORDER DETAILS=====================================
 type OrderDetail struct {
 	Ord_id       int `json:"ord_id"`
 	Prod_id      int `json:"prod_id"`
@@ -1834,29 +1887,6 @@ func PostAddToCart(res http.ResponseWriter, req *http.Request) {
 
 	json.NewEncoder(res).Encode(OkResponse{
 		Message: suc,
-	})
-}
-
-func CheckOutCart(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	cust_id := req.URL.Query().Get("id")
-	cust_id_int, err := strconv.Atoi(cust_id)
-	if err != nil {
-		json.NewEncoder(res).Encode(ErrorResponse{
-			Error: "Invalid Customer ID",
-		})
-		return
-	}
-
-	id, err := CheckOutCartQuery(int64(cust_id_int))
-	if err != nil {
-		json.NewEncoder(res).Encode(ErrorResponse{
-			Error: err.Error(),
-		})
-		return
-	}
-	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Order ID: %d", id),
 	})
 }
 
@@ -1966,255 +1996,8 @@ func PostOrderDetail(res http.ResponseWriter, req *http.Request) {
 		Message: fmt.Sprintf("Order detail added successfully. %d rows affected", rows),
 	})
 }
+// =====================================ORDER DETAILS=====================================
 
-// CUSTOMERS
-type CustomerSignUp struct {
-	First_name string  `json:"first_name"`
-	Last_name  string  `json:"last_name"`
-	Email      string  `json:"email"`
-	Password   string  `json:"password"`
-	Cred_limit float64 `json:"cred_limit"`
-}
-
-func PostCustomerSignUp(res http.ResponseWriter, req *http.Request) {
-	var customerSignUp *CustomerSignUp
-	res.Header().Set("Content-Type", "application/json")
-	err := json.NewDecoder(req.Body).Decode(&customerSignUp)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			"Could not decode request body")
-		log.Println(err)
-		return
-	}
-
-	if ContainsEmpty([]string{
-		customerSignUp.First_name,
-		customerSignUp.Last_name,
-		customerSignUp.Email,
-		customerSignUp.Password}) {
-		ErrorRes(res, http.StatusBadRequest,
-			"first_name, last_name, email, password cannot be empty")
-		return
-	}
-
-	if len(customerSignUp.Password) < 8 {
-		ErrorRes(res, http.StatusBadRequest,
-			"password must be at least 8 characters")
-		return
-	}
-
-	if isEmailInDb(customerSignUp.Email, "customer") {
-		ErrorRes(res, http.StatusBadRequest,
-			"email is already in use")
-		return
-	}
-
-	if !isEmailValid(customerSignUp.Email) {
-		ErrorRes(res, http.StatusBadRequest,
-			"email is invalid")
-		return
-	}
-
-	_, err = SignCustomerQuery(customerSignUp)
-	if err != nil {
-		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding customer, try again later."))
-		log.Println(err)
-		return
-	}
-
-	res.WriteHeader(http.StatusCreated)
-	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Customer added successfully."),
-	})
-}
-
-type CustomerLogIn struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-func PostCustomerLogIn(res http.ResponseWriter, req *http.Request) {
-	var customerLogIn *CustomerLogIn
-	customer := &Customer{}
-	res.Header().Set("Content-Type", "application/json")
-	err := json.NewDecoder(req.Body).Decode(&customerLogIn)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			"Could not decode request body")
-		log.Println(err)
-		return
-	}
-
-	if ContainsEmpty([]string{
-		customerLogIn.Email,
-		customerLogIn.Password}) {
-		ErrorRes(res, http.StatusBadRequest,
-			"email, password cannot be empty")
-		return
-	}
-
-	err = LogInCustomerQuery(customerLogIn, customer)
-	if err != nil {
-		ErrorRes(res, http.StatusUnauthorized,
-			fmt.Sprintf("Incorrect email or password!"))
-		log.Println(err)
-		return
-	}
-
-	res.WriteHeader(http.StatusOK)
-	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("%d", customer.Cust_id),
-	})
-}
-
-type CustAddr struct {
-	Addr_id int `json:"addr_id"`
-}
-
-func PutCustAddr(res http.ResponseWriter, req *http.Request) {
-	var addCustAddr *CustAddr
-	res.Header().Set("Content-Type", "application/json")
-	err := json.NewDecoder(req.Body).Decode(&addCustAddr)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			"Could not decode request body")
-		log.Println(err)
-		return
-	}
-
-	if addCustAddr.Addr_id != 0 {
-		if !isAddrIdInDb(addCustAddr.Addr_id) {
-			ErrorRes(res, http.StatusBadRequest,
-				"addr_id is invalid")
-			return
-		}
-	}
-
-	cust_id := req.URL.Query().Get("id")
-	cust_id_int, err := strconv.ParseInt(cust_id, 10, 64)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			fmt.Sprintf("Could not parse id, try again later."))
-		log.Println(err)
-		return
-	}
-
-	rows, err := AddCustAddrQuery(cust_id_int, addCustAddr.Addr_id)
-	if err != nil {
-		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding customer address, make sure addr_id is in the database"))
-		log.Println(err)
-		return
-	}
-
-	res.WriteHeader(http.StatusCreated)
-	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Customer address added successfully. %d rows affected", rows),
-	})
-}
-
-// EMPLOYEES
-type EmployeeSignUp struct {
-	First_name string `json:"first_name"`
-	Last_name  string `json:"last_name"`
-	Email      string `json:"email"`
-	Password   string `json:"password"`
-	Job_title  string `json:"job_title"`
-}
-
-func PostEmployeeSignUp(res http.ResponseWriter, req *http.Request) {
-	var employeeSignUp *EmployeeSignUp
-	res.Header().Set("Content-Type", "application/json")
-	err := json.NewDecoder(req.Body).Decode(&employeeSignUp)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			"Could not decode request body")
-		log.Println(err)
-		return
-	}
-
-	if ContainsEmpty([]string{
-		employeeSignUp.First_name,
-		employeeSignUp.Last_name,
-		employeeSignUp.Email,
-		employeeSignUp.Password,
-		employeeSignUp.Job_title}) {
-		ErrorRes(res, http.StatusBadRequest,
-			"first_name, last_name, email, password, job_title cannot be empty")
-		return
-	}
-
-	if len(employeeSignUp.Password) < 8 {
-		ErrorRes(res, http.StatusBadRequest,
-			"password must be at least 8 characters")
-		return
-	}
-
-	if isEmailInDb(employeeSignUp.Email, "employee") {
-		ErrorRes(res, http.StatusBadRequest,
-			"email is already in use")
-		return
-	}
-
-	if !isEmailValid(employeeSignUp.Email) {
-		ErrorRes(res, http.StatusBadRequest,
-			"email is invalid")
-		return
-	}
-
-	_, err = SignEmployeeQuery(employeeSignUp)
-	if err != nil {
-		ErrorRes(res, http.StatusBadRequest,
-			fmt.Sprintf("Error adding employee, try again later."))
-		log.Println(err)
-		return
-	}
-
-	res.WriteHeader(http.StatusCreated)
-	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("Employee added successfully."),
-	})
-}
-
-type EmployeeLogin struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-func PostEmpLogin(res http.ResponseWriter, req *http.Request) {
-	var employeeLogin *EmployeeLogin
-	employee := &Employee{}
-	res.Header().Set("Content-Type", "application/json")
-	err := json.NewDecoder(req.Body).Decode(&employeeLogin)
-	if err != nil {
-		ErrorRes(res, http.StatusInternalServerError,
-			"Could not decode request body")
-		log.Println(err)
-		return
-	}
-
-	if ContainsEmpty([]string{
-		employeeLogin.Email,
-		employeeLogin.Password}) {
-		ErrorRes(res, http.StatusBadRequest,
-			"email, password cannot be empty")
-		return
-	}
-
-	err = LogInEmployeeQuery(employeeLogin, employee)
-	if err != nil {
-		ErrorRes(res, http.StatusUnauthorized,
-			fmt.Sprintf("Incorrect email or password!"))
-		log.Println(err)
-		return
-	}
-
-	res.WriteHeader(http.StatusOK)
-	json.NewEncoder(res).Encode(OkResponse{
-		Message: fmt.Sprintf("%d", employee.Emp_id),
-	})
-}
 
 // EMPLOYEES
 // TODO: ADD A PUT ROUTE FOR EDITING EMPLOYEES
